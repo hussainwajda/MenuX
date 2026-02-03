@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://ep-withered-cherry-ah0gdbwj-pooler.c-3.us-east-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_OSf4jIh9QYde&sslmode=require&channelBinding=require
+    username: postgres
+    password: LYRVmjwNIh4WZHfj
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
