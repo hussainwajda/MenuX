@@ -3,7 +3,8 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://ep-withered-cherry-ah0gdbwj-pooler.c-3.us-east-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_OSf4jIh9QYde&sslmode=require&channelBinding=require
+    # url: jdbc:postgresql://ep-withered-cherry-ah0gdbwj-pooler.c-3.us-east-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_OSf4jIh9QYde&sslmode=require&channelBinding=require
+    url: jdbc:postgresql://db.uhquhfxirazgkkveoclz.supabase.co:5432/postgres?user=postgres&password=LYRVmjwNIh4WZHfj
     username: postgres
     password: LYRVmjwNIh4WZHfj
     driver-class-name: org.postgresql.Driver

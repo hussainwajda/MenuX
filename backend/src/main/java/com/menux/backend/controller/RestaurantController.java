@@ -5,6 +5,8 @@ import com.menux.backend.dto.RestaurantResponse;
 import com.menux.backend.service.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.repository.query.Param;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

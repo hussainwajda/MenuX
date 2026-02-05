@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "restaurants")
@@ -29,6 +31,7 @@ public class Restaurant {
     @Column(unique = true, nullable = false)
     private String slug;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String themeConfig;
 

@@ -1,5 +1,7 @@
 package com.menux.backend.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.menux.backend.dto.RestaurantRequest;
 import com.menux.backend.dto.RestaurantResponse;
 import com.menux.backend.entity.Restaurant;
@@ -8,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -15,15 +18,16 @@ import java.util.UUID;
 public class RestaurantService {
 
     private final RestaurantRepository repository;
+    private final ObjectMapper objectMapper;
 
     public RestaurantResponse create(RestaurantRequest request) {
         Restaurant restaurant = Restaurant.builder()
                 .name(request.name())
                 .logoUrl(request.logoUrl())
                 .slug(request.slug())
-                .themeConfig(request.themeConfig())
+                .themeConfig(themeConfigToJson(request.themeConfig()))
                 .subscriptionPlan(request.subscriptionPlan())
-                .isActive(true)
+                .isActive(request.isActive() != null ? request.isActive() : true)
                 .build();
 
         return mapToResponse(repository.save(restaurant));
@@ -48,8 +52,11 @@ public class RestaurantService {
         restaurant.setName(request.name());
         restaurant.setLogoUrl(request.logoUrl());
         restaurant.setSlug(request.slug());
-        restaurant.setThemeConfig(request.themeConfig());
+        restaurant.setThemeConfig(themeConfigToJson(request.themeConfig()));
         restaurant.setSubscriptionPlan(request.subscriptionPlan());
+        if (request.isActive() != null) {
+            restaurant.setActive(request.isActive());
+        }
 
         return mapToResponse(repository.save(restaurant));
     }
@@ -60,6 +67,17 @@ public class RestaurantService {
 
         restaurant.setActive(false);
         repository.save(restaurant);
+    }
+
+    private String themeConfigToJson(Map<String, Object> themeConfig) {
+        if (themeConfig == null || themeConfig.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(themeConfig);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid themeConfig", e);
+        }
     }
 
     private RestaurantResponse mapToResponse(Restaurant r) {
