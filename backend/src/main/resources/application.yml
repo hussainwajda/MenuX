@@ -7,9 +7,17 @@ spring:
     url: jdbc:postgresql://db.uhquhfxirazgkkveoclz.supabase.co:5432/postgres?user=postgres&password=LYRVmjwNIh4WZHfj
     username: postgres
     password: LYRVmjwNIh4WZHfj
+    # username: neondb_owner
+    # password: npg_OSf4jIh9QYde
     driver-class-name: org.postgresql.Driver
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
+
+supabase:
+  url: ${SUPABASE_URL}
+  anon-key: ${SUPABASE_ANON_KEY}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  storage-bucket: restaurant-logos

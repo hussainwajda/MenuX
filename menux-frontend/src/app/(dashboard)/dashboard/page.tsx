@@ -1,47 +1,226 @@
 // src/app/(dashboard)/dashboard/page.tsx
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
-import { MOCK_ORDERS, MOCK_MENU_ITEMS } from "@/data/mockData"; // Changed Import to MOCK_MENU_ITEMS
-import ProductCard from "@/components/dashboard/ProductList"; // Ensure this matches your file name
+import { MOCK_ORDERS, MOCK_MENU_ITEMS } from "@/data/mockData";
+import ProductCard from "@/components/dashboard/ProductList";
 import OrderQueueCard from "@/components/dashboard/OrderQueue";
-import KOTModal from "@/components/dashboard/KOTModal"; 
-import { Search, Bell } from "lucide-react";
+import KOTModal from "@/components/dashboard/KOTModal";
+import { Search, Bell, LogOut, Store, Sparkles, ShieldCheck } from "lucide-react";
 import { Order, KOT, OrderStatus } from "@/types";
+import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
 
-export default function DashboardPage() {
+function RestaurantAuth() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  const setRestaurant = useRestaurantSessionStore((s) => s.setRestaurant);
+
+  const DEMO_CREDENTIALS = {
+    email: "bistro@menux.dev",
+    password: "MenuX@123",
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (mode === "login") {
+      const isValid =
+        email.trim().toLowerCase() === DEMO_CREDENTIALS.email &&
+        password === DEMO_CREDENTIALS.password;
+
+      if (!isValid) {
+        setError("Invalid credentials. Use the demo login shown below.");
+        return;
+      }
+    }
+
+    setError("");
+    setRestaurant({
+      name: name || "MenuX Partner",
+      email,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0e0b0a] text-white relative overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#ff6b35]/40 blur-[120px]" />
+        <div className="absolute top-20 right-0 h-80 w-80 rounded-full bg-[#4f46e5]/40 blur-[140px]" />
+        <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-[#00c2a8]/30 blur-[120px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white/70">
+            <Sparkles className="h-4 w-4 text-[#ffb703]" />
+            Restaurant Console
+          </div>
+          <h1 className="text-4xl md:text-5xl font-semibold leading-tight">
+            Run service with precision, speed, and a little flair.
+          </h1>
+          <p className="text-white/70 text-lg max-w-xl">
+            MenuX helps restaurants track orders, sync inventory, and keep every table humming.
+            Sign in to manage your live kitchen queue or create a new restaurant workspace.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { label: "Live orders", value: "24/7", icon: <Store className="h-5 w-5" /> },
+              { label: "Avg. service time", value: "12m", icon: <ShieldCheck className="h-5 w-5" /> },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 flex items-center gap-3"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">{stat.label}</p>
+                  <p className="text-lg font-semibold">{stat.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-[0_30px_120px_-40px_rgba(0,0,0,0.9)]">
+          <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => setMode("login")}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                mode === "login"
+                  ? "bg-white text-black"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Log in
+            </button>
+            <button
+              onClick={() => setMode("signup")}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                mode === "signup"
+                  ? "bg-white text-black"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Sign up
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {mode === "signup" && (
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-white/50">Restaurant name</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Crimson Table"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ffb703]/40"
+                />
+              </div>
+            )}
+            <div>
+              <label className="text-xs uppercase tracking-[0.2em] text-white/50">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="team@restaurant.com"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/40"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-[0.2em] text-white/50">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a strong passphrase"
+                className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00c2a8]/40"
+                required
+              />
+            </div>
+            {mode === "signup" && (
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-white/50">Phone</label>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 000-0000"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff6b35]/40"
+                />
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-white text-black py-3 text-sm font-semibold hover:bg-white/90 transition"
+            >
+              {mode === "login" ? "Enter Dashboard" : "Create Restaurant"}
+            </button>
+            {error && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-100">
+                {error}
+              </div>
+            )}
+          </form>
+
+          {mode === "login" && (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-xs text-white/70">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Demo Credentials</p>
+              <div className="mt-3 space-y-1">
+                <p>
+                  Email: <span className="text-white">{DEMO_CREDENTIALS.email}</span>
+                </p>
+                <p>
+                  Password: <span className="text-white">{DEMO_CREDENTIALS.password}</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 flex items-center justify-between text-xs text-white/50">
+            <span>Need a super admin?</span>
+            <a href="/admin" className="text-white hover:text-[#ffb703] transition">
+              Go to admin login
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RestaurantDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedKOT, setSelectedKOT] = useState<KOT | null>(null);
+  const logout = useRestaurantSessionStore((s) => s.logout);
 
-  // --- LISTENER FOR LIVE ORDERS ---
   useEffect(() => {
     const checkOrders = () => {
       const simulatedData = localStorage.getItem("simulated_orders");
       if (simulatedData) {
         const newOrders = JSON.parse(simulatedData);
-        
-        setOrders(prevOrders => {
-           // Merge new LocalStorage data with current State
-           // We place 'prevOrders' FIRST here so that if we just updated a status 
-           // in the UI, we prioritize that over the old 'newOrders' data momentarily
-           const combined = [...prevOrders, ...newOrders];
-           
-           // Deduplicate based on ID
-           const unique = combined.filter((order, index, self) =>
-              index === self.findIndex((t) => (
-                t.id === order.id
-              ))
-           );
-           // Sort by creation time (optional, keeps new orders at top)
-           // return unique.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-           return unique;
+
+        setOrders((prevOrders) => {
+          const combined = [...prevOrders, ...newOrders];
+          const unique = combined.filter(
+            (order, index, self) =>
+              index === self.findIndex((t) => t.id === order.id)
+          );
+          return unique;
         });
       }
     };
 
     checkOrders();
     window.addEventListener("storage", checkOrders);
-    const interval = setInterval(checkOrders, 2000); // Polling every 2s
+    const interval = setInterval(checkOrders, 2000);
 
     return () => {
       window.removeEventListener("storage", checkOrders);
@@ -49,54 +228,54 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // --- KOT MODAL LOGIC ---
   const handleViewKOT = (order: Order) => {
-    // Check if the order has real items (from customer side) or fallback to dummy
     const orderItems = (order as any).items || [
-        { name: "Fiery Jalapeno Pizza", variant: "Medium", quantity: 1, note: "Extra spicy" },
-        { name: "Chicken Dominator", variant: "Large", quantity: 1 },
-        { name: "Coke", quantity: order.items_count - 2 },
+      { name: "Fiery Jalapeno Pizza", variant: "Medium", quantity: 1, note: "Extra spicy" },
+      { name: "Chicken Dominator", variant: "Large", quantity: 1 },
+      { name: "Coke", quantity: order.items_count - 2 },
     ];
 
     const kotData: KOT = {
       order_id: order.id,
       table_number: order.table_number,
       timestamp: order.created_at,
-      items: orderItems
+      items: orderItems,
     };
     setSelectedKOT(kotData);
   };
 
-  // --- STATUS UPDATE LOGIC ---
   const handleStatusUpdate = (orderId: string) => {
-    const statusSequence: OrderStatus[] = ['PENDING', 'ACCEPTED', 'COOKING', 'READY', 'SERVED'];
+    const statusSequence: OrderStatus[] = [
+      "PENDING",
+      "ACCEPTED",
+      "COOKING",
+      "READY",
+      "SERVED",
+    ];
 
-    setOrders(currentOrders => {
-      // 1. Calculate the New State
-      const updatedOrders = currentOrders.map(order => {
+    setOrders((currentOrders) => {
+      const updatedOrders = currentOrders.map((order) => {
         if (order.id === orderId) {
           const currentIndex = statusSequence.indexOf(order.status);
-          const nextStatus = currentIndex < statusSequence.length - 1 
-            ? statusSequence[currentIndex + 1] 
-            : order.status;
-          
+          const nextStatus =
+            currentIndex < statusSequence.length - 1
+              ? statusSequence[currentIndex + 1]
+              : order.status;
+
           return { ...order, status: nextStatus };
         }
         return order;
       });
 
-      // 2. CRITICAL: Update LocalStorage so the polling doesn't revert it
       const simulatedData = localStorage.getItem("simulated_orders");
       if (simulatedData) {
         let storedOrders = JSON.parse(simulatedData);
         const orderIndex = storedOrders.findIndex((o: Order) => o.id === orderId);
 
         if (orderIndex !== -1) {
-          // Find the updated status from our calculation above
-          const updatedOrder = updatedOrders.find(o => o.id === orderId);
+          const updatedOrder = updatedOrders.find((o) => o.id === orderId);
           if (updatedOrder) {
             storedOrders[orderIndex].status = updatedOrder.status;
-            // Save back to storage
             localStorage.setItem("simulated_orders", JSON.stringify(storedOrders));
           }
         }
@@ -108,15 +287,8 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 bg-[#F8F9FA] p-6">
-      {/* KOT Modal Overlay */}
-      {selectedKOT && (
-        <KOTModal 
-          kot={selectedKOT} 
-          onClose={() => setSelectedKOT(null)} 
-        />
-      )}
+      {selectedKOT && <KOTModal kot={selectedKOT} onClose={() => setSelectedKOT(null)} />}
 
-      {/* Top Header */}
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Order Queues</h1>
@@ -125,9 +297,9 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Search table or order..." 
+            <input
+              type="text"
+              placeholder="Search table or order..."
               className="pl-10 pr-4 py-2 bg-white rounded-full border border-gray-200 text-sm focus:outline-none w-64"
             />
           </div>
@@ -135,14 +307,19 @@ export default function DashboardPage() {
             <Bell className="w-4 h-4" />
             <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
+          <button
+            onClick={() => logout()}
+            className="p-2 bg-white rounded-full border border-gray-200 relative hover:bg-red-50"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
-      {/* Order Queue Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {orders.map((order) => (
-          <OrderQueueCard 
-            key={order.id} 
+          <OrderQueueCard
+            key={order.id}
             order={order}
             onPrintKOT={() => handleViewKOT(order)}
             onUpdateStatus={() => handleStatusUpdate(order.id)}
@@ -150,37 +327,49 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Product List Area */}
       <section>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-semibold text-gray-800">Live Inventory</h2>
             <div className="flex gap-2">
-               {["All Menu", "Burgers", "Pizzas"].map((filter, i) => (
-                 <button key={i} className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${i===0 ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-200 hover:border-orange-200'}`}>
-                   {filter}
-                 </button>
-               ))}
+              {["All Menu", "Burgers", "Pizzas"].map((filter, i) => (
+                <button
+                  key={i}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    i === 0
+                      ? "bg-orange-600 text-white border-orange-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-orange-200"
+                  }`}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
           </div>
           <div className="flex gap-2">
-             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium hover:bg-gray-50 text-gray-600">
-               Input Manually
-             </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium hover:bg-gray-50 text-gray-600">
+              Input Manually
+            </button>
           </div>
         </div>
 
-        {/* The Grid - Now using MOCK_MENU_ITEMS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-           {MOCK_MENU_ITEMS.map((product) => (
-             <ProductCard key={product.id} product={product} />
-           ))}
-           <div className="border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50/50 transition-all cursor-pointer min-h-[300px]">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 group-hover:bg-orange-100 text-2xl">+</div>
-              <span className="font-medium text-sm">Add New Item</span>
-           </div>
+          {MOCK_MENU_ITEMS.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+          <div className="border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50/50 transition-all cursor-pointer min-h-[300px]">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 group-hover:bg-orange-100 text-2xl">
+              +
+            </div>
+            <span className="font-medium text-sm">Add New Item</span>
+          </div>
         </div>
       </section>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  const isLoggedIn = useRestaurantSessionStore((s) => s.isLoggedIn);
+  return isLoggedIn ? <RestaurantDashboard /> : <RestaurantAuth />;
 }

@@ -1,0 +1,9 @@
+{
+  "name": "menux-root",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -ExecutionPolicy Bypass -File ./dev.ps1",
+    "frontend": "npm --prefix ./menux-frontend run dev",
+    "backend": ".\\backend\\mvnw.cmd -f .\\backend\\pom.xml spring-boot:run"
+  }
+}

@@ -1,11 +1,23 @@
 // src/app/(dashboard)/layout.tsx
+"use client";
+
+import { usePathname } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
+import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoggedIn = useRestaurantSessionStore((s) => s.isLoggedIn);
+  const isAuthRoute = pathname === "/dashboard";
+
+  if (isAuthRoute && !isLoggedIn) {
+    return <div className="min-h-screen bg-[#0e0b0a]">{children}</div>;
+  }
+
   return (
     <div className="flex h-screen w-full bg-[#1a1614] overflow-hidden">
       {/* Fixed Left Sidebar */}

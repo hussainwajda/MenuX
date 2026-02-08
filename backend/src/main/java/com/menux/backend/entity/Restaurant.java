@@ -2,13 +2,12 @@ package com.menux.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.Instant;
-import java.util.UUID;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "restaurants")
@@ -35,13 +34,24 @@ public class Restaurant {
     @Column(columnDefinition = "jsonb")
     private String themeConfig;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private SubscriptionPlan subscriptionPlan;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id", nullable = false)
+    private Subscription subscription;
+
+    @Column(name = "owner_name", nullable = false)
+    private String ownerName;
+
+    @Column(name = "owner_email", nullable = false)
+    private String ownerEmail;
+
+    @Column(name = "owner_phone")
+    private String ownerPhone;
+
+    @Column(name = "subscription_started_at", nullable = false)
+    private Instant subscriptionStartedAt;
 
     @Column(nullable = false)
     private boolean isActive = true;
-
 
     @CreationTimestamp
     @Column(updatable = false)

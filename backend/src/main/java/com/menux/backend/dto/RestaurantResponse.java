@@ -1,6 +1,6 @@
 package com.menux.backend.dto;
 
-import com.menux.backend.entity.SubscriptionPlan;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -8,10 +8,11 @@ import java.util.UUID;
 public record RestaurantResponse(
         UUID id,
         String name,
-        String logoUrl,
         String slug,
-        String themeConfig,
-        SubscriptionPlan subscriptionPlan,
+        String logoUrl,
+        JsonNode themeConfig,
+        SubscriptionResponse subscription,
         boolean isActive,
-        Instant createdAt
+        Instant createdAt,
+        Instant subscriptionStartedAt
 ) {}
