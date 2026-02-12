@@ -169,6 +169,16 @@ public class MenuItemService {
     }
 
     @Transactional(readOnly = true)
+    public List<MenuCategoryWithItemsResponse> getFullMenuBySlug(String slug) {
+        Restaurant restaurant = restaurantRepository.findBySlugIgnoreCase(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        if (!restaurant.isActive()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found");
+        }
+        return getFullMenu(restaurant.getId());
+    }
+
+    @Transactional(readOnly = true)
     public MenuItem getItemForRestaurant(UUID restaurantId, UUID itemId) {
         return menuItemRepository.findByIdAndRestaurantId(itemId, restaurantId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu item not found"));
