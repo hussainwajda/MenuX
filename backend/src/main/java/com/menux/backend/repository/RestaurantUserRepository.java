@@ -19,6 +19,12 @@ public interface RestaurantUserRepository extends JpaRepository<RestaurantUser, 
             @Param("restaurantId") UUID restaurantId
     );
 
+    @Query("select ru from RestaurantUser ru where ru.restaurant.id = :restaurantId and ru.role = :role and ru.isActive = true")
+    Optional<RestaurantUser> findActiveByRestaurantIdAndRole(
+            @Param("restaurantId") UUID restaurantId,
+            @Param("role") com.menux.backend.entity.RestaurantRole role
+    );
+
     @Modifying
     @Query("update RestaurantUser ru set ru.isActive = false where ru.restaurant.id = :restaurantId")
     int deactivateByRestaurantId(@Param("restaurantId") UUID restaurantId);

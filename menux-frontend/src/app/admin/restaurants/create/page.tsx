@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { apiClient, SubscriptionDropdownResponse } from '@/lib/api-client';
@@ -333,21 +332,21 @@ export default function AddRestaurantPage() {
 
           <div className="space-y-2">
             <Label htmlFor="subscription">Subscription Plan *</Label>
-            <Select
+            <select
+              id="subscription"
               value={formData.subscriptionId ? String(formData.subscriptionId) : ''}
-              onValueChange={(value) => handleInputChange('subscriptionId', Number(value))}
+              onChange={(e) => handleInputChange('subscriptionId', Number(e.target.value))}
+              className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.subscriptionId ? 'border-red-500' : ''}`}
             >
-              <SelectTrigger className={errors.subscriptionId ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Select a subscription plan" />
-              </SelectTrigger>
-              <SelectContent>
-                {subscriptions.map((subscription) => (
-                  <SelectItem key={subscription.id} value={String(subscription.id)}>
-                    {subscription.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="" disabled>
+                Select a subscription plan
+              </option>
+              {subscriptions.map((subscription) => (
+                <option key={subscription.id} value={String(subscription.id)}>
+                  {subscription.name}
+                </option>
+              ))}
+            </select>
             {errors.subscriptionId && <p className="text-red-500 text-sm">{errors.subscriptionId}</p>}
           </div>
         </div>

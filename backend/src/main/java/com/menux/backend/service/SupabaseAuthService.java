@@ -3,11 +3,10 @@ package com.menux.backend.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.menux.backend.config.SupabaseProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +17,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SupabaseAuthService {
 
     private final WebClient supabaseWebClient;
@@ -68,15 +68,15 @@ public class SupabaseAuthService {
     }
 
     public SupabaseToken signInWithPassword(String email, String password) {
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("email", email);
-        form.add("password", password);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("email", email);
+        payload.put("password", password);
 
         JsonNode response = supabaseWebClient.post()
                 .uri("/auth/v1/token?grant_type=password")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("apikey", properties.anonKey())
-                .bodyValue(form)
+                .bodyValue(payload)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .onErrorMap(WebClientResponseException.class, this::mapAuthError)
@@ -88,8 +88,9 @@ public class SupabaseAuthService {
 
         String accessToken = response.get("access_token").asText();
         String refreshToken = response.hasNonNull("refresh_token") ? response.get("refresh_token").asText() : null;
+        Long expiresIn = response.hasNonNull("expires_in") ? response.get("expires_in").asLong() : null;
         UUID userId = UUID.fromString(response.get("user").get("id").asText());
-        return new SupabaseToken(accessToken, refreshToken, userId);
+        return new SupabaseToken(accessToken, refreshToken, expiresIn, userId);
     }
 
     public UUID getUserIdFromAccessToken(String accessToken) {
@@ -110,13 +111,26 @@ public class SupabaseAuthService {
 
     private ResponseStatusException mapAuthError(WebClientResponseException ex) {
         String body = ex.getResponseBodyAsString();
+        String lowerBody = body != null ? body.toLowerCase() : "";
+        boolean invalidCreds = lowerBody.contains("invalid login credentials");
+
+        log.warn(
+                "Supabase auth error: status={} body={}",
+                ex.getStatusCode(),
+                body
+        );
+
+        if (invalidCreds) {
+            return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+        }
+
         String message = "Supabase auth error";
         if (body != null && !body.isBlank()) {
             message = message + ": " + body;
         }
-        HttpStatus status = ex.getStatusCode().is4xxClientError() ? HttpStatus.BAD_REQUEST : HttpStatus.BAD_GATEWAY;
+        HttpStatus status = ex.getStatusCode().is4xxClientError() ? HttpStatus.BAD_GATEWAY : HttpStatus.BAD_GATEWAY;
         return new ResponseStatusException(status, message);
     }
 
-    public record SupabaseToken(String accessToken, String refreshToken, UUID userId) {}
+    public record SupabaseToken(String accessToken, String refreshToken, Long expiresIn, UUID userId) {}
 }

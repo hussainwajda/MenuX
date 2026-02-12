@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 // import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { apiClient, SubscriptionDropdownResponse } from '@/lib/api-client';
 import Link from 'next/link';
@@ -41,6 +40,7 @@ export default function EditRestaurantPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionDropdownResponse[]>([]);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [initialFormData, setInitialFormData] = useState<typeof formData | null>(null);
 
   // Fetch restaurant and subscriptions on mount
   useEffect(() => {
@@ -54,6 +54,20 @@ export default function EditRestaurantPage() {
       const restaurant = await apiClient.getRestaurantById(id);
       
       setFormData({
+        name: restaurant.name,
+        slug: restaurant.slug,
+        logoUrl: restaurant.logoUrl || '',
+        ownerName: restaurant.ownerName || '',
+        ownerEmail: restaurant.ownerEmail || '',
+        ownerPhone: restaurant.ownerPhone || '',
+        subscriptionId: restaurant.subscription?.id ?? null,
+        themeConfig: {
+          primaryColor: restaurant.themeConfig?.primaryColor ?? '#3b82f6',
+          fontFamily: restaurant.themeConfig?.fontFamily ?? 'Inter'
+        },
+        isActive: restaurant.isActive,
+      });
+      setInitialFormData({
         name: restaurant.name,
         slug: restaurant.slug,
         logoUrl: restaurant.logoUrl || '',
@@ -150,14 +164,23 @@ export default function EditRestaurantPage() {
 
     setLoading(true);
     try {
-      await apiClient.updateRestaurant(id, {
-        name: formData.name,
-        slug: formData.slug,
-        logoUrl: formData.logoUrl,
-        subscriptionId: formData.subscriptionId ?? undefined,
-        themeConfig: formData.themeConfig,
-        isActive: formData.isActive,
-      });
+      const payload: any = {};
+      const initial = initialFormData;
+      if (!initial) return;
+
+      if (formData.name !== initial.name) payload.name = formData.name;
+      if (formData.slug !== initial.slug) payload.slug = formData.slug;
+      if (formData.logoUrl !== initial.logoUrl) payload.logoUrl = formData.logoUrl;
+      if (formData.ownerName !== initial.ownerName) payload.ownerName = formData.ownerName;
+      if (formData.ownerEmail !== initial.ownerEmail) payload.ownerEmail = formData.ownerEmail;
+      if (formData.ownerPhone !== initial.ownerPhone) payload.ownerPhone = formData.ownerPhone;
+      if (formData.subscriptionId !== initial.subscriptionId) payload.subscriptionId = formData.subscriptionId ?? undefined;
+      if (JSON.stringify(formData.themeConfig) !== JSON.stringify(initial.themeConfig)) {
+        payload.themeConfig = formData.themeConfig;
+      }
+      if (formData.isActive !== initial.isActive) payload.isActive = formData.isActive;
+
+      await apiClient.updateRestaurant(id, payload);
 
       toast.success("Restaurant updated successfully");
 
@@ -346,21 +369,21 @@ export default function EditRestaurantPage() {
 
             <div className="space-y-2">
               <Label htmlFor="subscription">Subscription Plan *</Label>
-              <Select
+              <select
+                id="subscription"
                 value={formData.subscriptionId ? String(formData.subscriptionId) : ''}
-                onValueChange={(value) => handleInputChange('subscriptionId', Number(value))}
+                onChange={(e) => handleInputChange('subscriptionId', Number(e.target.value))}
+                className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.subscriptionId ? 'border-red-500' : ''}`}
               >
-                <SelectTrigger className={errors.subscriptionId ? 'border-red-500' : ''}>
-                  <SelectValue placeholder="Select a subscription plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subscriptions.map((subscription) => (
-                    <SelectItem key={subscription.id} value={String(subscription.id)}>
-                      {subscription.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>
+                  Select a subscription plan
+                </option>
+                {subscriptions.map((subscription) => (
+                  <option key={subscription.id} value={String(subscription.id)}>
+                    {subscription.name}
+                  </option>
+                ))}
+              </select>
               {errors.subscriptionId && <p className="text-red-500 text-sm">{errors.subscriptionId}</p>}
             </div>
           </div>
@@ -413,18 +436,18 @@ export default function EditRestaurantPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="fontFamily">Font Family</Label>
-                <Select value={formData.themeConfig.fontFamily} onValueChange={(value) => handleThemeChange('fontFamily', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select font family" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Inter">Inter</SelectItem>
-                    <SelectItem value="Roboto">Roboto</SelectItem>
-                    <SelectItem value="Open Sans">Open Sans</SelectItem>
-                    <SelectItem value="Montserrat">Montserrat</SelectItem>
-                    <SelectItem value="Poppins">Poppins</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="fontFamily"
+                  value={formData.themeConfig.fontFamily}
+                  onChange={(e) => handleThemeChange('fontFamily', e.target.value)}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="Inter">Inter</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Poppins">Poppins</option>
+                </select>
               </div>
             </div>
           )}

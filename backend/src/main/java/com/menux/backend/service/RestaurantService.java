@@ -58,29 +58,27 @@ public class RestaurantService {
         );
 
         try {
-            Restaurant restaurant = Restaurant.builder()
-                    .name(request.name())
-                    .logoUrl(request.logoUrl())
-                    .slug(request.slug())
-                    .themeConfig(themeConfigToJson(request.themeConfig()))
-                    .subscription(subscription)
-                    .ownerName(request.ownerName())
-                    .ownerEmail(request.ownerEmail())
-                    .ownerPhone(request.ownerPhone())
-                    .subscriptionStartedAt(Instant.now())
-                    .isActive(request.isActive() != null ? request.isActive() : true)
-                    .build();
+            Restaurant restaurant = new Restaurant();
+            restaurant.setName(request.name());
+            restaurant.setLogoUrl(request.logoUrl());
+            restaurant.setSlug(request.slug());
+            restaurant.setThemeConfig(themeConfigToJson(request.themeConfig()));
+            restaurant.setSubscription(subscription);
+            restaurant.setOwnerName(request.ownerName());
+            restaurant.setOwnerEmail(request.ownerEmail());
+            restaurant.setOwnerPhone(request.ownerPhone());
+            restaurant.setSubscriptionStartedAt(Instant.now());
+            restaurant.setActive(request.isActive() != null ? request.isActive() : true);
 
             Restaurant saved = repository.save(restaurant);
 
-            RestaurantUser restaurantUser = RestaurantUser.builder()
-                    .restaurant(saved)
-                    .authUserId(authUserId)
-                    .role(RestaurantRole.OWNER)
-                    .displayName(request.ownerName())
-                    .phone(request.ownerPhone())
-                    .isActive(true)
-                    .build();
+            RestaurantUser restaurantUser = new RestaurantUser();
+            restaurantUser.setRestaurant(saved);
+            restaurantUser.setAuthUserId(authUserId);
+            restaurantUser.setRole(RestaurantRole.OWNER);
+            restaurantUser.setDisplayName(request.ownerName());
+            restaurantUser.setPhone(request.ownerPhone());
+            restaurantUser.setActive(true);
             restaurantUserRepository.save(restaurantUser);
 
             return mapToResponse(saved);
@@ -144,6 +142,15 @@ public class RestaurantService {
         }
 
         if (isAdmin) {
+            if (request.ownerName() != null && !request.ownerName().isBlank()) {
+                restaurant.setOwnerName(request.ownerName());
+            }
+            if (request.ownerEmail() != null && !request.ownerEmail().isBlank()) {
+                restaurant.setOwnerEmail(request.ownerEmail());
+            }
+            if (request.ownerPhone() != null) {
+                restaurant.setOwnerPhone(request.ownerPhone());
+            }
             if (request.subscriptionId() != null) {
                 Subscription subscription = subscriptionRepository.findById(request.subscriptionId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Subscription not found"));
@@ -155,7 +162,22 @@ public class RestaurantService {
             }
         }
 
-        return mapToResponse(repository.save(restaurant));
+        Restaurant saved = repository.save(restaurant);
+
+        if (isAdmin && (request.ownerName() != null || request.ownerPhone() != null)) {
+            restaurantUserRepository.findActiveByRestaurantIdAndRole(saved.getId(), RestaurantRole.OWNER)
+                    .ifPresent(ownerUser -> {
+                        if (request.ownerName() != null && !request.ownerName().isBlank()) {
+                            ownerUser.setDisplayName(request.ownerName());
+                        }
+                        if (request.ownerPhone() != null) {
+                            ownerUser.setPhone(request.ownerPhone());
+                        }
+                        restaurantUserRepository.save(ownerUser);
+                    });
+        }
+
+        return mapToResponse(saved);
     }
 
     @Transactional
@@ -183,6 +205,7 @@ public class RestaurantService {
         return new RestaurantLoginResponse(
                 token.accessToken(),
                 token.refreshToken(),
+                token.expiresIn(),
                 user.getRole().name(),
                 restaurantResponse
         );
@@ -209,7 +232,10 @@ public class RestaurantService {
                 mapSubscription(r.getSubscription()),
                 r.isActive(),
                 r.getCreatedAt(),
-                r.getSubscriptionStartedAt()
+                r.getSubscriptionStartedAt(),
+                r.getOwnerName(),
+                r.getOwnerEmail(),
+                r.getOwnerPhone()
         );
     }
 

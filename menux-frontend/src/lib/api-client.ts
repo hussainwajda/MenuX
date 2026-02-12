@@ -47,6 +47,14 @@ export interface RestaurantResponse {
   ownerPhone?: string | null;
 }
 
+export interface RestaurantLoginResponse {
+  accessToken: string;
+  refreshToken?: string | null;
+  expiresIn?: number | null;
+  userRole: string;
+  restaurant: RestaurantResponse;
+}
+
 export interface RestaurantCreateRequest {
   name: string;
   slug: string;
@@ -67,6 +75,9 @@ export interface RestaurantUpdateRequest {
   name?: string;
   slug?: string;
   logoUrl?: string | null;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string | null;
   subscriptionId?: number;
   themeConfig?: {
     primaryColor?: string;
@@ -99,14 +110,15 @@ export function hasAdminAuth(): boolean {
   return Boolean(localStorage.getItem(ADMIN_AUTH_STORAGE_KEY));
 }
 
-export function setRestaurantAuth(token: string) {
+export function setRestaurantAuth(token: string, expiresAt?: number | null) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(RESTAURANT_AUTH_STORAGE_KEY, token);
+  const payload = JSON.stringify({ token, expiresAt: expiresAt ?? null });
+  sessionStorage.setItem(RESTAURANT_AUTH_STORAGE_KEY, payload);
 }
 
 export function clearRestaurantAuth() {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(RESTAURANT_AUTH_STORAGE_KEY);
+  sessionStorage.removeItem(RESTAURANT_AUTH_STORAGE_KEY);
 }
 
 function getAdminAuthHeader(): string | null {
@@ -117,8 +129,20 @@ function getAdminAuthHeader(): string | null {
 
 function getRestaurantAuthHeader(): string | null {
   if (typeof window === "undefined") return null;
-  const token = localStorage.getItem(RESTAURANT_AUTH_STORAGE_KEY);
-  return token ? `Bearer ${token}` : null;
+  const raw = sessionStorage.getItem(RESTAURANT_AUTH_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { token?: string; expiresAt?: number | null };
+    if (!parsed.token) return null;
+    if (parsed.expiresAt && parsed.expiresAt <= Date.now()) {
+      sessionStorage.removeItem(RESTAURANT_AUTH_STORAGE_KEY);
+      return null;
+    }
+    return `Bearer ${parsed.token}`;
+  } catch {
+    sessionStorage.removeItem(RESTAURANT_AUTH_STORAGE_KEY);
+    return null;
+  }
 }
 
 type ApiRequestOptions = RequestInit & {
@@ -218,5 +242,12 @@ export const apiClient = {
   getSubscriptionDropdown: () =>
     apiFetch<SubscriptionDropdownResponse[]>(API_ENDPOINTS.subscriptionDropdown(), {
       auth: "admin",
+    }),
+
+  restaurantLogin: (email: string, password: string) =>
+    apiFetch<RestaurantLoginResponse>(API_ENDPOINTS.restaurantAuthLogin(), {
+      method: "POST",
+      auth: "none",
+      body: JSON.stringify({ email, password }),
     }),
 };

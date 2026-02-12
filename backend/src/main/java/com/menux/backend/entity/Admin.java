@@ -13,7 +13,6 @@ import org.hibernate.annotations.CreationTimestamp;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Admin {
 
     @Id

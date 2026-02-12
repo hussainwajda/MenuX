@@ -29,10 +29,9 @@ public class AdminService {
     }
 
     public Admin createAdmin(String username, String password) {
-        Admin admin = Admin.builder()
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .build();
+        Admin admin = new Admin();
+        admin.setUsername(username);
+        admin.setPassword(passwordEncoder.encode(password));
         return adminRepository.save(admin);
     }
 }

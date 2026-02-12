@@ -31,12 +31,15 @@ public class SupabaseStorageService {
         if (extension != null && !extension.isBlank()) {
             objectName = objectName + "." + extension.toLowerCase();
         }
-
-        String path = properties.storageBucket() + "/" + objectName;
+        final String objectNameFinal = objectName;
 
         try {
             supabaseWebClient.post()
-                    .uri("/storage/v1/object/{path}", path)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/storage/v1/object")
+                            .pathSegment(properties.storageBucket())
+                            .pathSegment(objectNameFinal)
+                            .build())
                     .header("apikey", properties.serviceRoleKey())
                     .header("Authorization", "Bearer " + properties.serviceRoleKey())
                     .contentType(MediaType.parseMediaType(contentType(file)))
@@ -49,7 +52,7 @@ public class SupabaseStorageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read logo file");
         }
 
-        return publicUrl(objectName);
+        return publicUrl(objectNameFinal);
     }
 
     private String publicUrl(String objectName) {

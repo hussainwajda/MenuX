@@ -9,6 +9,9 @@ public record RestaurantUpdateRequest(
         String name,
         String slug,
         String logoUrl,
+        String ownerName,
+        String ownerEmail,
+        String ownerPhone,
         Long subscriptionId,
         @JsonDeserialize(using = ThemeConfigDeserializer.class)
         Map<String, Object> themeConfig,

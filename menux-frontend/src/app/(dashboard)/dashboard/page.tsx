@@ -9,40 +9,42 @@ import KOTModal from "@/components/dashboard/KOTModal";
 import { Search, Bell, LogOut, Store, Sparkles, ShieldCheck } from "lucide-react";
 import { Order, KOT, OrderStatus } from "@/types";
 import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
+import { apiClient, clearRestaurantAuth, setRestaurantAuth } from "@/lib/api-client";
 
 function RestaurantAuth() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
-  const setRestaurant = useRestaurantSessionStore((s) => s.setRestaurant);
+  const setSession = useRestaurantSessionStore((s) => s.setSession);
+  const [loading, setLoading] = useState(false);
 
-  const DEMO_CREDENTIALS = {
-    email: "bistro@menux.dev",
-    password: "MenuX@123",
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (mode === "login") {
-      const isValid =
-        email.trim().toLowerCase() === DEMO_CREDENTIALS.email &&
-        password === DEMO_CREDENTIALS.password;
-
-      if (!isValid) {
-        setError("Invalid credentials. Use the demo login shown below.");
-        return;
-      }
-    }
-
     setError("");
-    setRestaurant({
-      name: name || "MenuX Partner",
-      email,
-    });
+    setLoading(true);
+    try {
+      const response = await apiClient.restaurantLogin(email.trim(), password);
+      const expiresIn = response.expiresIn ?? 3600;
+      const expiresAt = Date.now() + expiresIn * 1000;
+
+      setRestaurantAuth(response.accessToken, expiresAt);
+      setSession({
+        restaurant: {
+          name: response.restaurant?.name,
+          email: response.restaurant?.ownerEmail,
+        },
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken ?? null,
+        userRole: response.userRole,
+        expiresIn,
+      });
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : "Login failed";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,41 +91,7 @@ function RestaurantAuth() {
         </div>
 
         <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-[0_30px_120px_-40px_rgba(0,0,0,0.9)]">
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => setMode("login")}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                mode === "login"
-                  ? "bg-white text-black"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Log in
-            </button>
-            <button
-              onClick={() => setMode("signup")}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                mode === "signup"
-                  ? "bg-white text-black"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              Sign up
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === "signup" && (
-              <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-white/50">Restaurant name</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Crimson Table"
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ffb703]/40"
-                />
-              </div>
-            )}
             <div>
               <label className="text-xs uppercase tracking-[0.2em] text-white/50">Email</label>
               <input
@@ -146,22 +114,12 @@ function RestaurantAuth() {
                 required
               />
             </div>
-            {mode === "signup" && (
-              <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-white/50">Phone</label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff6b35]/40"
-                />
-              </div>
-            )}
             <button
               type="submit"
-              className="w-full rounded-xl bg-white text-black py-3 text-sm font-semibold hover:bg-white/90 transition"
+              disabled={loading}
+              className="w-full rounded-xl bg-white text-black py-3 text-sm font-semibold hover:bg-white/90 transition disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {mode === "login" ? "Enter Dashboard" : "Create Restaurant"}
+              {loading ? "Signing in..." : "Enter Dashboard"}
             </button>
             {error && (
               <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-100">
@@ -169,20 +127,6 @@ function RestaurantAuth() {
               </div>
             )}
           </form>
-
-          {mode === "login" && (
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-xs text-white/70">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Demo Credentials</p>
-              <div className="mt-3 space-y-1">
-                <p>
-                  Email: <span className="text-white">{DEMO_CREDENTIALS.email}</span>
-                </p>
-                <p>
-                  Password: <span className="text-white">{DEMO_CREDENTIALS.password}</span>
-                </p>
-              </div>
-            </div>
-          )}
 
           <div className="mt-6 flex items-center justify-between text-xs text-white/50">
             <span>Need a super admin?</span>
@@ -200,6 +144,14 @@ function RestaurantDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedKOT, setSelectedKOT] = useState<KOT | null>(null);
   const logout = useRestaurantSessionStore((s) => s.logout);
+  const expiresAt = useRestaurantSessionStore((s) => s.expiresAt);
+
+  useEffect(() => {
+    if (expiresAt && expiresAt <= Date.now()) {
+      clearRestaurantAuth();
+      logout();
+    }
+  }, [expiresAt, logout]);
 
   useEffect(() => {
     const checkOrders = () => {
@@ -308,7 +260,10 @@ function RestaurantDashboard() {
             <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
           <button
-            onClick={() => logout()}
+            onClick={() => {
+              clearRestaurantAuth();
+              logout();
+            }}
             className="p-2 bg-white rounded-full border border-gray-200 relative hover:bg-red-50"
           >
             <LogOut className="w-4 h-4" />

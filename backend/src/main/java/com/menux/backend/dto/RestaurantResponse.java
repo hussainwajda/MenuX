@@ -14,5 +14,8 @@ public record RestaurantResponse(
         SubscriptionResponse subscription,
         boolean isActive,
         Instant createdAt,
-        Instant subscriptionStartedAt
+        Instant subscriptionStartedAt,
+        String ownerName,
+        String ownerEmail,
+        String ownerPhone
 ) {}
