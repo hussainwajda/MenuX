@@ -25,3 +25,93 @@ export interface KOT {
   timestamp: string;
   items: KOTItem[];
 }
+
+// Menu Management Types
+export interface MenuCategory {
+  id: string;
+  restaurantId?: string;
+  name: string;
+  sortOrder?: number | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface MenuCategoryCreate {
+  name: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface MenuCategoryUpdate {
+  name?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface MenuItem {
+  id: string;
+  restaurantId?: string;
+  name: string;
+  description?: string;
+  price: number;
+  isVeg: boolean;
+  isAvailable: boolean;
+  imageUrl?: string;
+  categoryId: string;
+  createdAt: string;
+  variants?: MenuVariant[];
+}
+
+export interface MenuItemCreate {
+  categoryId: string;
+  name: string;
+  description?: string;
+  price: number;
+  isVeg: boolean;
+  isAvailable: boolean;
+  imageUrl?: string;
+}
+
+export interface MenuItemUpdate {
+  name?: string;
+  description?: string;
+  price?: number;
+  isVeg?: boolean;
+  isAvailable?: boolean;
+  imageUrl?: string;
+  categoryId?: string;
+}
+
+export interface MenuItemAvailability {
+  isAvailable: boolean;
+}
+
+export interface MenuVariant {
+  id: string;
+  menuItemId?: string;
+  name: string;
+  priceDifference: number;
+  createdAt: string;
+}
+
+export interface MenuVariantCreate {
+  name: string;
+  priceDifference: number;
+}
+
+export interface MenuVariantUpdate {
+  name?: string;
+  priceDifference?: number;
+}
+
+export interface MenuCategoryWithItems {
+  id: string;
+  name: string;
+  sortOrder?: number | null;
+  isActive: boolean;
+  items: MenuItem[];
+}
+
+export interface MenuPreview {
+  categories: MenuCategoryWithItems[];
+}

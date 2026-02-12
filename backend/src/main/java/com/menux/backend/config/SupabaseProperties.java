@@ -7,5 +7,6 @@ public record SupabaseProperties(
         String url,
         String anonKey,
         String serviceRoleKey,
-        String storageBucket
+        String storageBucket,
+        String menuItemsBucket
 ) {}

@@ -13,4 +13,15 @@ export const API_ENDPOINTS = {
 
   subscriptions: () => `${API_BASE_URL}/api/subscriptions`,
   subscriptionDropdown: () => `${API_BASE_URL}/api/subscription-dropdown`,
+
+  // Menu Management Endpoints
+  menuCategories: (restaurantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-categories`,
+  menuCategory: (restaurantId: string, categoryId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-categories/${categoryId}`,
+  menuItems: (restaurantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items`,
+  menuItemUpload: (restaurantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/upload`,
+  menuItem: (restaurantId: string, itemId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/${itemId}`,
+  menuItemsByCategory: (restaurantId: string, categoryId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/category/${categoryId}`,
+  menuVariants: (restaurantId: string, itemId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/${itemId}/variants`,
+  menuVariant: (restaurantId: string, itemId: string, variantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/${itemId}/variants/${variantId}`,
+  menuPreview: (restaurantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu`,
 };

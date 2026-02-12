@@ -31,8 +31,10 @@ function RestaurantAuth() {
       setRestaurantAuth(response.accessToken, expiresAt);
       setSession({
         restaurant: {
+          id: response.restaurant?.id,
           name: response.restaurant?.name,
-          email: response.restaurant?.ownerEmail,
+          ownerEmail: response.restaurant?.ownerEmail,
+          isActive: response.restaurant?.isActive,
         },
         accessToken: response.accessToken,
         refreshToken: response.refreshToken ?? null,

@@ -2,31 +2,91 @@
 'use client';
 
 import { useState } from "react";
-import { MOCK_MENU_ITEMS } from "@/data/mockData";
-import ProductCard from "@/components/dashboard/ProductList";
-import { Plus, Search, Filter } from "lucide-react";
+import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
+import { MenuCategoriesTab } from "@/app/dashboard/menu/components/MenuCategoriesTab";
+import { MenuItemsTab } from "@/app/dashboard/menu/components/MenuItemsTab";
+import { MenuVariantsTab } from "@/app/dashboard/menu/components/MenuVariantsTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShieldAlert } from "lucide-react";
 
 export default function MenuManagementPage() {
-  const [products, setProducts] = useState(MOCK_MENU_ITEMS);
+  const restaurant = useRestaurantSessionStore((s) => s.restaurant);
+  const [activeTab, setActiveTab] = useState("items"); // Changed default to "items"
+
+  // Check if restaurant is active
+  if (!restaurant?.isActive) {
+    return (
+      <div className="flex-1 bg-[#F8F9FA] p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Restaurant Inactive</h1>
+            <p className="text-gray-600 mb-6">
+              Your restaurant account is currently inactive. Please contact support to activate your account and access the menu management features.
+            </p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-700">
+                <strong>Restaurant:</strong> {restaurant?.name || 'Unknown'}<br />
+                <strong>Status:</strong> Inactive
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-[#F8F9FA] p-8 h-full overflow-y-auto">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dish Inventory</h1>
-          <p className="text-gray-500 mt-1">Manage availability and prices</p>
+          <h1 className="text-3xl font-bold text-gray-800">Menu Management</h1>
+          <p className="text-gray-500 mt-1">Manage your restaurant's menu categories, items, and variants</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-2 bg-orange-600 text-white rounded-full font-bold hover:bg-orange-700 transition-all">
-           <Plus size={18} /> Add New Dish
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+            Active: {restaurant?.name}
+          </div>
+        </div>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 rounded-t-2xl">
+            <TabsTrigger 
+              value="categories" 
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 rounded-xl"
+            >
+              Categories
+            </TabsTrigger>
+            <TabsTrigger 
+              value="items" 
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 rounded-xl"
+            >
+              Menu Items
+            </TabsTrigger>
+            <TabsTrigger 
+              value="variants" 
+              className="data-[state=active]:bg-white data-[state=active]:text-gray-900 rounded-xl"
+            >
+              Variants
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="categories" className="p-6">
+            <MenuCategoriesTab />
+          </TabsContent>
+
+          <TabsContent value="items" className="p-6">
+            <MenuItemsTab />
+          </TabsContent>
+
+          <TabsContent value="variants" className="p-6">
+            <MenuVariantsTab />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

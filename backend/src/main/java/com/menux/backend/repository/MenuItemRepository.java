@@ -1,0 +1,17 @@
+package com.menux.backend.repository;
+
+import com.menux.backend.entity.MenuItem;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
+    Optional<MenuItem> findByIdAndRestaurantId(UUID id, UUID restaurantId);
+
+    List<MenuItem> findByRestaurantIdAndCategoryId(UUID restaurantId, UUID categoryId);
+
+    List<MenuItem> findByRestaurantIdAndCategoryIdIn(UUID restaurantId, Collection<UUID> categoryIds);
+}

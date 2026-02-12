@@ -3,8 +3,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 interface RestaurantSession {
   restaurant: {
+    id?: string;
     name?: string;
-    email?: string;
+    ownerEmail?: string;
+    isActive?: boolean;
   } | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -13,7 +15,7 @@ interface RestaurantSession {
   isLoggedIn: boolean;
 
   setSession: (payload: {
-    restaurant: { name?: string; email?: string };
+    restaurant: { id?: string; name?: string; ownerEmail?: string; isActive?: boolean };
     accessToken: string;
     refreshToken?: string | null;
     userRole?: string | null;

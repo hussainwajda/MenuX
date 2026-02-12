@@ -10,6 +10,11 @@ spring:
     url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
     username: postgres.uhquhfxirazgkkveoclz
     password: LYRVmjwNIh4WZHfj
+    hikari:
+      data-source-properties:
+        prepareThreshold: 0
+        preparedStatementCacheQueries: 0
+        preparedStatementCacheSize: 0
     # url: jdbc:postgresql://ep-withered-cherry-ah0gdbwj-pooler.c-3.us-east-1.aws.neon.tech/neondb?user=neondb_owner&password=npg_OSf4jIh9QYde&sslmode=require&channelBinding=require
     # username: neondb_owner
     # password: npg_OSf4jIh9QYde
@@ -24,4 +29,5 @@ supabase:
   url: ${SUPABASE_URL}
   anon-key: ${SUPABASE_ANON_KEY}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
-  storage-bucket: restaurant-logos 
+  storage-bucket: restaurant-logos
+  menu-items-bucket: menu_items
