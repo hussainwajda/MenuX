@@ -33,6 +33,8 @@ function RestaurantAuth() {
         restaurant: {
           id: response.restaurant?.id,
           name: response.restaurant?.name,
+          slug: response.restaurant?.slug,
+          subscriptionPlan: response.restaurant?.subscriptionPlan ?? response.restaurant?.subscription?.name,
           ownerEmail: response.restaurant?.ownerEmail,
           isActive: response.restaurant?.isActive,
         },

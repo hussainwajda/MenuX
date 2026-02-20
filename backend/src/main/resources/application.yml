@@ -31,3 +31,6 @@ supabase:
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
   storage-bucket: restaurant-logos
   menu-items-bucket: menu_items
+
+app:
+  qr-base-url: ${QR_BASE_URL:https://menux-new.vercel.app}

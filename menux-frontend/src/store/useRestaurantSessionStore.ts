@@ -5,6 +5,8 @@ interface RestaurantSession {
   restaurant: {
     id?: string;
     name?: string;
+    slug?: string;
+    subscriptionPlan?: string;
     ownerEmail?: string;
     isActive?: boolean;
   } | null;
@@ -15,7 +17,14 @@ interface RestaurantSession {
   isLoggedIn: boolean;
 
   setSession: (payload: {
-    restaurant: { id?: string; name?: string; ownerEmail?: string; isActive?: boolean };
+    restaurant: {
+      id?: string;
+      name?: string;
+      slug?: string;
+      subscriptionPlan?: string;
+      ownerEmail?: string;
+      isActive?: boolean;
+    };
     accessToken: string;
     refreshToken?: string | null;
     userRole?: string | null;

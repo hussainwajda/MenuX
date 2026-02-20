@@ -3,14 +3,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, ClipboardList, Bell, Headphones, Settings, LogOut, User } from "lucide-react";
+import {
+  LayoutDashboard,
+  UtensilsCrossed,
+  ClipboardList,
+  Bell,
+  Headphones,
+  Settings,
+  LogOut,
+  Armchair,
+  Hotel,
+} from "lucide-react";
+import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const subscriptionPlan = useRestaurantSessionStore((s) => s.restaurant?.subscriptionPlan);
+  const isUltraPlan = (subscriptionPlan || "").toUpperCase() === "ULTRA";
+  const showRoomsOption = isUltraPlan || !subscriptionPlan;
 
   const menuItems = [
     { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
     { name: "Dish Inventory", icon: <UtensilsCrossed size={20} />, path: "/dashboard/menu" },
+    { name: "Restaurant Tables", icon: <Armchair size={20} />, path: "/dashboard/tables" },
+    ...(showRoomsOption
+      ? [{ name: "Hotel Rooms", icon: <Hotel size={20} />, path: "/dashboard/rooms" }]
+      : []),
     { name: "Orders", icon: <ClipboardList size={20} />, path: "/dashboard/orders" },
     { name: "Notifications", icon: <Bell size={20} />, path: "/dashboard/notifications" },
     { name: "Support", icon: <Headphones size={20} />, path: "/dashboard/support" },

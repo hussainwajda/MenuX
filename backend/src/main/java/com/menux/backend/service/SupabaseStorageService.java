@@ -99,6 +99,30 @@ public class SupabaseStorageService {
         return publicUrl(properties.menuItemsBucket(), objectNameFinal);
     }
 
+    public String uploadQrImage(UUID restaurantId, String typeFolder, UUID entityId, byte[] pngBytes) {
+        if (pngBytes == null || pngBytes.length == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "QR image is empty");
+        }
+        String objectName = "qr/" + restaurantId + "/" + typeFolder + "/" + entityId + ".png";
+
+        supabaseWebClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/storage/v1/object")
+                        .pathSegment(properties.storageBucket())
+                        .pathSegment(objectName)
+                        .build())
+                .header("apikey", properties.serviceRoleKey())
+                .header("Authorization", "Bearer " + properties.serviceRoleKey())
+                .contentType(MediaType.IMAGE_PNG)
+                .bodyValue(pngBytes)
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorMap(WebClientResponseException.class, this::mapStorageError)
+                .block();
+
+        return publicUrl(properties.storageBucket(), objectName);
+    }
+
     private void validateImage(MultipartFile file) {
         String type = contentType(file);
         if (!ALLOWED_IMAGE_TYPES.contains(type)) {

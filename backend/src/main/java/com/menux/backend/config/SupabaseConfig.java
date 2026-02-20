@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
-@EnableConfigurationProperties(SupabaseProperties.class)
+@EnableConfigurationProperties({SupabaseProperties.class, AppProperties.class})
 public class SupabaseConfig {
 
     @Bean

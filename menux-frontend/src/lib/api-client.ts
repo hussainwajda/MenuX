@@ -33,6 +33,7 @@ export interface RestaurantResponse {
   id: string;
   name: string;
   slug: string;
+  subscriptionPlan?: string | null;
   logoUrl?: string | null;
   themeConfig?: {
     primaryColor?: string;

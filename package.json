@@ -5,5 +5,8 @@
     "dev": "powershell -ExecutionPolicy Bypass -File ./dev.ps1",
     "frontend": "npm --prefix ./menux-frontend run dev",
     "backend": ".\\backend\\mvnw.cmd -f .\\backend\\pom.xml spring-boot:run"
+  },
+  "dependencies": {
+    "tailwindcss": "^4.1.18"
   }
 }
