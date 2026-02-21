@@ -106,7 +106,7 @@ export function MenuCategoriesTab() {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      sortOrder: category.sortOrder,
+      sortOrder: category.sortOrder ?? undefined,
       isActive: category.isActive
     });
     setIsModalOpen(true);

@@ -35,7 +35,7 @@ function RestaurantAuth() {
           name: response.restaurant?.name,
           slug: response.restaurant?.slug,
           subscriptionPlan: response.restaurant?.subscriptionPlan ?? response.restaurant?.subscription?.name,
-          ownerEmail: response.restaurant?.ownerEmail,
+          ownerEmail: response.restaurant?.ownerEmail ?? undefined,
           isActive: response.restaurant?.isActive,
         },
         accessToken: response.accessToken,

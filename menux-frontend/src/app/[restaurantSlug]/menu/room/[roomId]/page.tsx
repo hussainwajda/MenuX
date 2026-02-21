@@ -1,6 +1,6 @@
-// src/app/menu/[restaurantId]/[tableId]/page.tsx
+// src/app/[restaurantSlug]/menu/room/[roomId]/page.tsx
 import CustomerMenuPage from "@/components/menu/CustomerMenuPage";
 
-export default function MenuPage() {
+export default function MenuByRoomPage() {
   return <CustomerMenuPage />;
 }

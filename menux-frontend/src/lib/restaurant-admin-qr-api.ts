@@ -143,7 +143,10 @@ function generateQrImageUrl(url: string) {
 
 function fallbackQrTarget(entity: QrManagedEntity, slug: string | undefined, id: string) {
   const safeSlug = slug || "restaurant";
-  const path = entity === "room" ? `/${safeSlug}/room/${id}` : `/${safeSlug}/table/${id}`;
+  const path =
+    entity === "room"
+      ? `/${safeSlug}/menu/room/${id}`
+      : `/${safeSlug}/menu/table/${id}`;
   const base = QR_BASE_URL.endsWith("/") ? QR_BASE_URL.slice(0, -1) : QR_BASE_URL;
   return `${base}${path}`;
 }

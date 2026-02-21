@@ -237,11 +237,11 @@ export default function MenuPreviewPage() {
                                   <p className="text-lg font-semibold text-gray-900 mt-2">INR {item.price}</p>
                                   
                                   {/* Variants */}
-                                  {item.variants.length > 0 && (
+                                  {item.variants && item.variants.length > 0 && (
                                     <div className="mt-3 space-y-2">
                                       <p className="text-sm font-medium text-gray-700">Variants:</p>
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {item.variants.map((variant) => (
+                                        {item.variants?.map((variant) => (
                                           <div key={variant.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
                                             <span className="text-sm text-gray-700">{variant.name}</span>
                                             <span className="text-sm font-medium text-gray-900">

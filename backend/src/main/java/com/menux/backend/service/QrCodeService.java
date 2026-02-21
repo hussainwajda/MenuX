@@ -52,7 +52,7 @@ public class QrCodeService {
         if (base.isBlank()) {
             base = "https://menux-new.vercel.app";
         }
-        return base + "/" + slug + "/" + type + "/" + id;
+        return base + "/" + slug + "/menu/" + type + "/" + id;
     }
 
     private byte[] generateQrWithLogo(String qrUrl, String logoUrl) {

@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { apiClient, SubscriptionDropdownResponse } from '@/lib/api-client';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function AddRestaurantPage() {
   const router = useRouter();

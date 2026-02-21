@@ -34,3 +34,9 @@ supabase:
 
 app:
   qr-base-url: ${QR_BASE_URL:https://menux-new.vercel.app}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
