@@ -39,6 +39,15 @@ public class RoomAdminController {
         return roomService.getAll(user.getRestaurant().getId());
     }
 
+    @GetMapping("/{id}")
+    public RoomResponse getById(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        RestaurantUser user = restaurantAdminAccessService.requireRestaurantAdmin(authorization);
+        return roomService.getById(user.getRestaurant().getId(), id);
+    }
+
     @PutMapping("/{id}")
     public RoomResponse update(
             @PathVariable UUID id,

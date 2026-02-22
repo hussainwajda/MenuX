@@ -68,8 +68,10 @@ export function QrManagementPage({
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const [activeItem, setActiveItem] = useState<QrManagementItem | null>(null);
+  const [deleteItem, setDeleteItem] = useState<QrManagementItem | null>(null);
   const [formState, setFormState] = useState<FormState>({ number: "" });
   const [formError, setFormError] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -192,16 +194,22 @@ export function QrManagementPage({
     }
   };
 
-  const handleDelete = async (item: QrManagementItem) => {
-    const approved = window.confirm(`Delete ${entityLabel.toLowerCase()} ${item.number}? This action cannot be undone.`);
-    if (!approved) return;
+  const requestDelete = (item: QrManagementItem) => {
+    setDeleteItem(item);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
 
     const previous = items;
-    setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
+    setItems((current) => current.filter((currentItem) => currentItem.id !== deleteItem.id));
 
     try {
-      await deleteQrManagementItem(entity, item.id);
+      await deleteQrManagementItem(entity, deleteItem.id);
       toast.success(`${entityLabel} deleted successfully`);
+      setIsDeleteOpen(false);
+      setDeleteItem(null);
     } catch (error) {
       setItems(previous);
       const apiError = error as RestaurantApiError;
@@ -343,7 +351,7 @@ export function QrManagementPage({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(item)}
+                  onClick={() => requestDelete(item)}
                   className="border-red-300 text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
@@ -442,6 +450,35 @@ export function QrManagementPage({
               </DialogFooter>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteOpen}
+        onOpenChange={(open) => {
+          setIsDeleteOpen(open);
+          if (!open) {
+            setDeleteItem(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete {entityLabel}</DialogTitle>
+            <DialogDescription>
+              {deleteItem
+                ? `Delete ${entityLabel.toLowerCase()} ${deleteItem.number}? This action cannot be undone.`
+                : "This action cannot be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -57,6 +57,13 @@ public class RoomService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public RoomResponse getById(UUID restaurantId, UUID roomId) {
+        Restaurant restaurant = getRestaurant(restaurantId);
+        requireUltra(restaurant);
+        return toResponse(getRoom(restaurantId, roomId));
+    }
+
     @Transactional
     public RoomResponse update(UUID restaurantId, UUID roomId, RoomUpdateRequest request) {
         Restaurant restaurant = getRestaurant(restaurantId);
@@ -80,8 +87,7 @@ public class RoomService {
         Restaurant restaurant = getRestaurant(restaurantId);
         requireUltra(restaurant);
         Room room = getRoom(restaurantId, roomId);
-        room.setActive(false);
-        roomRepository.save(room);
+        roomRepository.delete(room);
     }
 
     @Transactional

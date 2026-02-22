@@ -13,5 +13,7 @@ public interface MenuVariantRepository extends JpaRepository<MenuVariant, UUID> 
 
     List<MenuVariant> findByMenuItemIdIn(Collection<UUID> menuItemIds);
 
+    List<MenuVariant> findByIdIn(Collection<UUID> ids);
+
     Optional<MenuVariant> findByIdAndMenuItemId(UUID id, UUID menuItemId);
 }

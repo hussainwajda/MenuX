@@ -57,6 +57,11 @@ public class TableService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public TableResponse getById(UUID restaurantId, UUID tableId) {
+        return toResponse(getTable(restaurantId, tableId));
+    }
+
     @Transactional
     public TableResponse update(UUID restaurantId, UUID tableId, TableUpdateRequest request) {
         RestaurantTable table = getTable(restaurantId, tableId);
@@ -76,8 +81,7 @@ public class TableService {
     @Transactional
     public void delete(UUID restaurantId, UUID tableId) {
         RestaurantTable table = getTable(restaurantId, tableId);
-        table.setActive(false);
-        tableRepository.save(table);
+        tableRepository.delete(table);
     }
 
     @Transactional

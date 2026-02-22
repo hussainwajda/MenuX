@@ -42,6 +42,15 @@ public class TableAdminController {
         return tableService.getAll(user.getRestaurant().getId());
     }
 
+    @GetMapping("/{id}")
+    public TableResponse getById(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        RestaurantUser user = restaurantAdminAccessService.requireRestaurantAdmin(authorization);
+        return tableService.getById(user.getRestaurant().getId(), id);
+    }
+
     @PutMapping("/{id}")
     public TableResponse update(
             @PathVariable UUID id,
