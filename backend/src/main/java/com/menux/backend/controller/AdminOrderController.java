@@ -1,6 +1,7 @@
 package com.menux.backend.controller;
 
 import com.menux.backend.dto.AdminOrderResponse;
+import com.menux.backend.dto.AdminMarkOrderPaidRequest;
 import com.menux.backend.dto.AdminUpdateOrderStatusRequest;
 import com.menux.backend.entity.RestaurantUser;
 import com.menux.backend.service.OrderService;
@@ -46,5 +47,15 @@ public class AdminOrderController {
     ) {
         RestaurantUser user = restaurantAdminAccessService.requireRestaurantAdmin(authorization);
         return orderService.updateAdminOrderStatus(user.getRestaurant().getId(), id, request.status());
+    }
+
+    @PostMapping("/{id}/mark-paid")
+    public AdminOrderResponse markPaid(
+            @PathVariable UUID id,
+            @Valid @RequestBody AdminMarkOrderPaidRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        RestaurantUser user = restaurantAdminAccessService.requireRestaurantAdmin(authorization);
+        return orderService.markAdminOrderPaid(user.getRestaurant().getId(), id, request.gateway());
     }
 }

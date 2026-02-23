@@ -7,6 +7,10 @@ import java.util.UUID;
 public record MenuItemWithVariantsResponse(
         UUID itemId,
         String name,
+        String description,
         BigDecimal price,
+        Boolean isVeg,
+        Boolean isAvailable,
+        String imageUrl,
         List<MenuVariantResponse> variants
 ) {}

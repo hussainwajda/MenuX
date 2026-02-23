@@ -2,11 +2,12 @@
 
 import StaticMenu from '@/components/menu/StaticMenu';
 
-export default function ViewMenuPage({ 
+export default async function ViewMenuPage({ 
   params 
 }: { 
-  params: { restaurantSlug: string } 
+  params: Promise<{ restaurantSlug: string }> 
 }) {
+  const resolvedParams = await params;
   // This passes the slug (e.g., 'hotel-balaji') from the URL directly to the component
-  return <StaticMenu restaurantSlug={params.restaurantSlug} />;
+  return <StaticMenu restaurantSlug={resolvedParams.restaurantSlug} />;
 }

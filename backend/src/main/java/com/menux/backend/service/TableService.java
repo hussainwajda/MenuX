@@ -1,6 +1,7 @@
 package com.menux.backend.service;
 
 import com.menux.backend.dto.TableCreateRequest;
+import com.menux.backend.dto.PublicDiningContextResponse;
 import com.menux.backend.dto.TableResponse;
 import com.menux.backend.dto.TableUpdateRequest;
 import com.menux.backend.entity.Restaurant;
@@ -60,6 +61,27 @@ public class TableService {
     @Transactional(readOnly = true)
     public TableResponse getById(UUID restaurantId, UUID tableId) {
         return toResponse(getTable(restaurantId, tableId));
+    }
+
+    @Transactional(readOnly = true)
+    public PublicDiningContextResponse getPublicContextBySlug(String slug, UUID tableId) {
+        Restaurant restaurant = restaurantRepository.findBySlugIgnoreCase(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        if (!restaurant.isActive()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found");
+        }
+        RestaurantTable table = getTable(restaurant.getId(), tableId);
+        return new PublicDiningContextResponse(
+                restaurant.getId(),
+                restaurant.getName(),
+                restaurant.getSlug(),
+                restaurant.getLogoUrl(),
+                restaurant.getSubscription() != null ? restaurant.getSubscription().getName() : null,
+                "table",
+                table.getId(),
+                table.getTableNumber(),
+                table.isActive()
+        );
     }
 
     @Transactional

@@ -1,78 +1,65 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { MenuItem, MenuCategory, MenuVariant } from '@/types'; // Using your exact types
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { apiClient, type PublicMenuCategoryResponse } from '@/lib/api-client';
 import { Loader2, Leaf, Flame } from 'lucide-react';
 
 interface StaticMenuProps {
   restaurantSlug: string;
+  orderButtonHref?: string;
+  orderButtonLabel?: string;
 }
 
-export default function StaticMenu({ restaurantSlug }: StaticMenuProps) {
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  // Updated MenuItemVariant to MenuVariant to match your api-client.ts
-  const [menuData, setMenuData] = useState<Record<string, { items: MenuItem[], variants: Record<string, MenuVariant[]> }>>({});
+function formatCurrency(value: number) {
+  return `Rs. ${Number.isFinite(value) ? value.toFixed(2).replace(/\.00$/, '') : '0'}`;
+}
+
+export default function StaticMenu({
+  restaurantSlug,
+  orderButtonHref,
+  orderButtonLabel = 'Order Now',
+}: StaticMenuProps) {
+  const [categories, setCategories] = useState<PublicMenuCategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchLiveMenu = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // 1. Fetch restaurants list using your existing pagination method (page 0, size 100)
-        const restaurantsPage = await apiClient.getRestaurants(0, 100);
-        
-        // Find the restaurant in the '.content' array
-        const matchedRestaurant = restaurantsPage.content.find((r) => {
-          const generatedSlug = r.name ? r.name.toLowerCase().replace(/\s+/g, '-') : '';
-          return r.slug === restaurantSlug || generatedSlug === restaurantSlug;
-        });
-
-        if (!matchedRestaurant) {
-          setError(`Could not find a restaurant matching: ${restaurantSlug}`);
-          setLoading(false);
-          return;
-        }
-
-        const restaurantId = matchedRestaurant.id;
-
-        // 2. Fetch Categories using the matched ID
-        const cats = await apiClient.getMenuCategories(restaurantId);
-        const activeCats = cats.filter(c => c.isActive).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-        setCategories(activeCats);
-
-        const organizedData: typeof menuData = {};
-
-        // 3. Fetch Items and Variants
-        await Promise.all(activeCats.map(async (cat) => {
-          const items = await apiClient.getMenuItemsByCategory(restaurantId, cat.id);
-          const activeItems = items.filter(i => i.isAvailable);
-          
-          const variantsMap: Record<string, MenuVariant[]> = {};
-          
-          await Promise.all(activeItems.map(async (item) => {
-            // Using your existing getMenuVariants method
-            const variants = await apiClient.getMenuVariants(restaurantId, item.id);
-            variantsMap[item.id] = variants;
-          }));
-
-          organizedData[cat.id] = { items: activeItems, variants: variantsMap };
-        }));
-
-        setMenuData(organizedData);
-      } catch (error) {
-        console.error("Failed to load static menu:", error);
-        setError("Failed to load the menu. Please check your connection.");
+        const data = await apiClient.getPublicMenuBySlug(restaurantSlug);
+        if (!mounted) return;
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to load static menu:', err);
+        if (!mounted) return;
+        setError('Failed to load the menu. Please check your connection.');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchLiveMenu();
+
+    return () => {
+      mounted = false;
+    };
   }, [restaurantSlug]);
+
+  const visibleCategories = useMemo(
+    () =>
+      categories
+        .map((cat) => ({
+          ...cat,
+          items: (cat.items ?? []).filter((item) => item.isAvailable !== false),
+        }))
+        .filter((cat) => cat.items.length > 0),
+    [categories]
+  );
 
   if (loading) {
     return (
@@ -92,48 +79,81 @@ export default function StaticMenu({ restaurantSlug }: StaticMenuProps) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-12 pb-20 bg-gray-50 min-h-screen">
-      <div className="text-center space-y-2 mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-4xl font-bold text-orange-600 capitalize">
-          {restaurantSlug.replace(/-/g, ' ')}
-        </h1>
-        <p className="text-gray-500 font-medium">Digital Menu</p>
+    <div className="max-w-4xl mx-auto p-4 space-y-10 pb-20 bg-gray-50 min-h-screen">
+      <div className="sticky top-0 z-20 pt-2">
+        <div className="text-center space-y-3 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h1 className="text-4xl font-bold text-orange-600 capitalize">
+            {restaurantSlug.replace(/-/g, ' ')}
+          </h1>
+          <p className="text-gray-500 font-medium">Digital Menu</p>
+
+          {orderButtonHref && (
+            <div className="pt-2">
+              <Link
+                href={orderButtonHref}
+                className="inline-flex items-center justify-center rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-700 transition-colors"
+              >
+                {orderButtonLabel}
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
-      {categories.map((category) => (
-        <section key={category.id} className="space-y-6">
+      {visibleCategories.map((category) => (
+        <section key={category.categoryId} className="space-y-6">
           <h2 className="text-3xl font-bold border-b-2 border-orange-500 pb-2 text-gray-800">
-            {category.name}
+            {category.categoryName}
           </h2>
-          
+
           <div className="grid gap-6">
-            {menuData[category.id]?.items.map((item) => (
-              <div key={item.id} className="flex gap-4 p-4 rounded-xl bg-white shadow-sm border border-gray-100">
+            {category.items.map((item) => (
+              <div
+                key={item.itemId}
+                className="flex gap-4 p-4 rounded-xl bg-white shadow-sm border border-gray-100"
+              >
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
+                  />
                 ) : (
                   <div className="w-24 h-24 bg-orange-50 rounded-lg flex-shrink-0 flex items-center justify-center border border-orange-100">
                     <span className="text-orange-300 text-xs text-center px-2">No Image</span>
                   </div>
                 )}
-                
-                <div className="flex-1 space-y-1">
-                  <div className="flex justify-between items-start">
+
+                <div className="flex-1 space-y-1 min-w-0">
+                  <div className="flex justify-between items-start gap-3">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                      {item.name}
-                      {item.isVeg ? <Leaf className="w-4 h-4 text-green-500" /> : <Flame className="w-4 h-4 text-red-500" />}
+                      <span className="truncate">{item.name}</span>
+                      {(item.isVeg ?? false) ? (
+                        <Leaf className="w-4 h-4 text-green-500 shrink-0" />
+                      ) : (
+                        <Flame className="w-4 h-4 text-red-500 shrink-0" />
+                      )}
                     </h3>
-                    <span className="font-bold text-orange-600">₹{item.price}</span>
+                    <span className="font-bold text-orange-600 whitespace-nowrap">
+                      {formatCurrency(Number(item.price ?? 0))}
+                    </span>
                   </div>
-                  
-                  <p className="text-gray-500 text-sm line-clamp-2">{item.description}</p>
-                  
-                  {/* Updated to check against MenuVariant priceDifference */}
-                  {menuData[category.id].variants[item.id]?.length > 0 && (
+
+                  {item.description && (
+                    <p className="text-gray-500 text-sm line-clamp-2">{item.description}</p>
+                  )}
+
+                  {item.variants?.length > 0 && (
                     <div className="mt-3 flex gap-2 flex-wrap">
-                      {menuData[category.id].variants[item.id].map((v) => (
-                        <span key={v.id} className="text-[11px] font-medium bg-orange-50 border border-orange-100 px-2 py-1 rounded-md text-orange-800">
-                          {v.name} {v.priceDifference > 0 ? `(+₹${v.priceDifference})` : ''}
+                      {item.variants.map((v) => (
+                        <span
+                          key={v.id}
+                          className="text-[11px] font-medium bg-orange-50 border border-orange-100 px-2 py-1 rounded-md text-orange-800"
+                        >
+                          {v.name}{' '}
+                          {Number(v.priceDifference ?? 0) > 0
+                            ? `(+${formatCurrency(Number(v.priceDifference))})`
+                            : ''}
                         </span>
                       ))}
                     </div>

@@ -151,7 +151,11 @@ public class MenuItemService {
                     .map(item -> new MenuItemWithVariantsResponse(
                             item.getId(),
                             item.getName(),
+                            item.getDescription(),
                             item.getPrice(),
+                            item.isVeg(),
+                            item.isAvailable(),
+                            item.getImageUrl(),
                             variantsByItemFinal.getOrDefault(item.getId(), List.of())
                                     .stream()
                                     .map(this::toVariantResponse)

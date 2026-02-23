@@ -9,6 +9,7 @@ export interface CartItem {
   quantity: number;
   image?: string;
   variant?: string;
+  instruction?: string;
   is_veg: boolean; 
 }
 
@@ -21,6 +22,7 @@ interface CartStore {
   removeItem: (id: string) => void;
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
+  updateInstruction: (id: string, instruction: string) => void;
   clearCart: () => void;
 }
 
@@ -66,6 +68,12 @@ export const useCartStore = create<CartStore>((set) => ({
       }
       return item;
     }).filter((item) => item.quantity > 0) // Remove if quantity becomes 0
+  })),
+
+  updateInstruction: (id, instruction) => set((state) => ({
+    items: state.items.map((item) =>
+      item.id === id ? { ...item, instruction } : item
+    ),
   })),
 
   // Clear all

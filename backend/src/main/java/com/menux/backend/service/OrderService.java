@@ -111,6 +111,8 @@ public class OrderService {
             orderItem.setVariant(variant);
             orderItem.setQuantity(quantity);
             orderItem.setPrice(unitPrice);
+            String instruction = requestedItem.instruction();
+            orderItem.setInstruction(instruction != null && !instruction.isBlank() ? instruction.trim() : null);
             orderItems.add(orderItem);
 
             total = total.add(unitPrice.multiply(BigDecimal.valueOf(quantity)));
@@ -178,6 +180,52 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public PublicOrderTrackerResponse getPublicOrder(UUID orderId, String slug, UUID tableId, UUID roomId) {
+        CustomerOrder order = customerOrderRepository.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        Restaurant restaurant = getActiveRestaurantBySlug(slug);
+        if (!order.getRestaurant().getId().equals(restaurant.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to this restaurant");
+        }
+        validateOrderOwnership(order, tableId, roomId);
+
+        AdminOrderResponse adminView = enrichOrders(List.of(order)).get(0);
+        Integer estimatedMinutes = estimateMinutes(adminView.status(), adminView.createdAt());
+
+        return new PublicOrderTrackerResponse(
+                adminView.id(),
+                restaurant.getName(),
+                adminView.tableId(),
+                adminView.tableNumber(),
+                adminView.roomId(),
+                adminView.roomNumber(),
+                adminView.orderType(),
+                adminView.status(),
+                adminView.paymentStatus(),
+                adminView.totalAmount(),
+                adminView.createdAt(),
+                estimatedMinutes,
+                adminView.items().stream()
+                        .map(item -> new PublicOrderTrackerResponse.PublicOrderTrackerItemResponse(
+                                item.menuItemId(),
+                                item.menuItemName(),
+                                item.variantId(),
+                                item.variantName(),
+                                item.quantity(),
+                                item.price(),
+                                item.instruction()
+                        ))
+                        .toList(),
+                adminView.statusHistory().stream()
+                        .map(h -> new PublicOrderTrackerResponse.PublicOrderTrackerStatusResponse(
+                                h.status(),
+                                h.updatedAt()
+                        ))
+                        .toList()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<AdminOrderResponse> getAdminOrders(UUID restaurantId) {
         List<CustomerOrder> orders = customerOrderRepository.findByRestaurantIdOrderByCreatedAtDesc(restaurantId);
         return enrichOrders(orders);
@@ -194,6 +242,34 @@ public class OrderService {
         CustomerOrder order = getOrderForRestaurant(restaurantId, orderId);
         validateStatusTransition(order.getStatus(), nextStatus);
         changeOrderStatusInternal(order, nextStatus);
+        return getAdminOrder(restaurantId, orderId);
+    }
+
+    @Transactional
+    public AdminOrderResponse markAdminOrderPaid(UUID restaurantId, UUID orderId, PaymentGateway gateway) {
+        CustomerOrder order = getOrderForRestaurant(restaurantId, orderId);
+        if (gateway != PaymentGateway.CASH && gateway != PaymentGateway.UPI) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only CASH or UPI can be used for manual payment");
+        }
+        if (order.getPaymentStatus() == OrderPaymentStatus.PAID
+                || orderPaymentRepository.existsByOrderIdAndStatus(orderId, OrderPaymentRecordStatus.SUCCESS)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Order is already marked as paid");
+        }
+
+        OrderPayment payment = new OrderPayment();
+        payment.setOrder(order);
+        payment.setGateway(gateway);
+        payment.setStatus(OrderPaymentRecordStatus.SUCCESS);
+        payment.setTransactionId(resolveTransactionId(gateway, null, true));
+        orderPaymentRepository.save(payment);
+
+        order.setPaymentStatus(OrderPaymentStatus.PAID);
+        customerOrderRepository.save(order);
+
+        if (order.getStatus() == OrderStatus.PENDING) {
+            changeOrderStatusInternal(order, OrderStatus.ACCEPTED);
+        }
+
         return getAdminOrder(restaurantId, orderId);
     }
 
@@ -310,6 +386,24 @@ public class OrderService {
             case CASH -> "cash";
         };
         return prefix + "_" + UUID.randomUUID();
+    }
+
+    private Integer estimateMinutes(OrderStatus status, Instant createdAt) {
+        if (status == OrderStatus.SERVED || status == OrderStatus.CANCELLED) {
+            return 0;
+        }
+        int base = switch (status) {
+            case PENDING -> 25;
+            case ACCEPTED -> 20;
+            case COOKING -> 12;
+            case READY -> 5;
+            default -> 15;
+        };
+        if (createdAt == null) {
+            return base;
+        }
+        long elapsed = Math.max(0, ChronoUnit.MINUTES.between(createdAt, Instant.now()));
+        return Math.max(2, base - (int) elapsed);
     }
 
     private void validateStatusTransition(OrderStatus current, OrderStatus next) {
@@ -477,7 +571,8 @@ public class OrderService {
                 item.getVariant() != null ? item.getVariant().getId() : null,
                 item.getVariant() != null ? item.getVariant().getName() : null,
                 item.getQuantity(),
-                item.getPrice()
+                item.getPrice(),
+                item.getInstruction()
         );
     }
 

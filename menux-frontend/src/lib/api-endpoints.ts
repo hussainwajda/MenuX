@@ -24,4 +24,16 @@ export const API_ENDPOINTS = {
   menuVariants: (restaurantId: string, itemId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/${itemId}/variants`,
   menuVariant: (restaurantId: string, itemId: string, variantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu-items/${itemId}/variants/${variantId}`,
   menuPreview: (restaurantId: string) => `${API_BASE_URL}/api/restaurants/${restaurantId}/menu`,
+
+  // Public customer menu / QR endpoints
+  publicMenuBySlug: (slug: string) => `${API_BASE_URL}/api/restaurants/slug/${slug}/menu`,
+  publicTableContext: (slug: string, tableId: string) => `${API_BASE_URL}/api/restaurants/slug/${slug}/table/${tableId}`,
+  publicRoomContext: (slug: string, roomId: string) => `${API_BASE_URL}/api/restaurants/slug/${slug}/room/${roomId}`,
+  publicOrders: () => `${API_BASE_URL}/api/public/orders`,
+  publicOrderById: (orderId: string) => `${API_BASE_URL}/api/public/orders/${orderId}`,
+
+  adminOrders: () => `${API_BASE_URL}/api/admin/orders`,
+  adminOrderById: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}`,
+  adminOrderStatus: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}/status`,
+  adminOrderMarkPaid: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}/mark-paid`,
 };

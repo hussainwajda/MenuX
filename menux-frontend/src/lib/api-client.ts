@@ -185,6 +185,137 @@ export interface MenuPreview {
   categories: MenuCategoryWithItems[];
 }
 
+export interface PublicDiningContextResponse {
+  restaurantId: string;
+  restaurantName: string;
+  restaurantSlug: string;
+  restaurantLogoUrl?: string | null;
+  subscriptionPlan?: string | null;
+  entityType: "table" | "room";
+  entityId: string;
+  entityNumber: string;
+  entityActive: boolean;
+}
+
+export interface PublicMenuVariantResponse {
+  id: string;
+  menuItemId?: string;
+  name: string;
+  priceDifference: number;
+  createdAt?: string;
+}
+
+export interface PublicMenuItemResponse {
+  itemId: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  isVeg?: boolean | null;
+  isAvailable?: boolean | null;
+  imageUrl?: string | null;
+  variants: PublicMenuVariantResponse[];
+}
+
+export interface PublicMenuCategoryResponse {
+  categoryId: string;
+  categoryName: string;
+  items: PublicMenuItemResponse[];
+}
+
+export type PaymentGateway = "UPI" | "RAZORPAY" | "CASH";
+export type OrderPaymentStatus = "UNPAID" | "PAID" | "REFUNDED" | "FAILED";
+export type OrderStatus =
+  | "CREATED"
+  | "PENDING"
+  | "ACCEPTED"
+  | "COOKING"
+  | "READY"
+  | "SERVED"
+  | "CANCELLED";
+
+export interface PublicCreateOrderItemRequest {
+  menuItemId: string;
+  variantId?: string | null;
+  quantity: number;
+  instruction?: string | null;
+}
+
+export interface PublicCreateOrderResponse {
+  orderId: string;
+  totalAmount: number;
+  paymentRequired: boolean;
+}
+
+export interface PublicOrderPaymentResponse {
+  orderId: string;
+  paymentId: string;
+  paymentRecordStatus: "INITIATED" | "SUCCESS" | "FAILED" | string;
+  orderPaymentStatus: OrderPaymentStatus;
+  orderStatus: OrderStatus;
+  transactionId?: string | null;
+}
+
+export interface PublicOrderTrackerItemResponse {
+  menuItemId: string;
+  menuItemName: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  quantity: number;
+  price: number;
+  instruction?: string | null;
+}
+
+export interface PublicOrderTrackerStatusResponse {
+  status: OrderStatus;
+  updatedAt: string;
+}
+
+export interface PublicOrderTrackerResponse {
+  orderId: string;
+  restaurantName: string;
+  tableId?: string | null;
+  tableNumber?: string | null;
+  roomId?: string | null;
+  roomNumber?: string | null;
+  orderType: string;
+  status: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  totalAmount: number;
+  createdAt: string;
+  estimatedMinutes?: number | null;
+  items: PublicOrderTrackerItemResponse[];
+  statusHistory: PublicOrderTrackerStatusResponse[];
+}
+
+export interface AdminOrderItemResponse {
+  id: string;
+  menuItemId: string;
+  menuItemName: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  quantity: number;
+  price: number;
+  instruction?: string | null;
+}
+
+export interface AdminOrderResponse {
+  id: string;
+  restaurantId: string;
+  tableId?: string | null;
+  tableNumber?: string | null;
+  roomId?: string | null;
+  roomNumber?: string | null;
+  orderType: string;
+  status: OrderStatus;
+  paymentStatus: OrderPaymentStatus;
+  totalAmount: number;
+  createdAt: string;
+  items: AdminOrderItemResponse[];
+  statusHistory: Array<{ id: string; status: OrderStatus; updatedAt: string }>;
+  payments: Array<{ id: string; gateway: PaymentGateway; transactionId?: string | null; status: string; createdAt: string }>;
+  kitchenTicket?: { id: string; orderId: string; status: string; createdAt: string; updatedAt: string } | null;
+}
+
 export function setAdminAuth(username: string, password: string) {
   if (typeof window === "undefined") return;
   const token = btoa(`${username}:${password}`);
@@ -282,7 +413,7 @@ async function apiFetch<T>(url: string, options: ApiRequestOptions = {}): Promis
 
 export const apiClient = {
   adminLogin: (username: string, password: string) =>
-    apiFetch<any>(API_ENDPOINTS.adminLogin(), {
+    apiFetch<Record<string, unknown>>(API_ENDPOINTS.adminLogin(), {
       method: "POST",
       auth: "none",
       headers: {
@@ -447,4 +578,77 @@ export const apiClient = {
     apiFetch<MenuCategoryWithItems[]>(API_ENDPOINTS.menuPreview(restaurantId), {
       auth: "restaurant",
     }).then((categories) => ({ categories })),
+
+  // Public customer menu / QR
+  getPublicMenuBySlug: (slug: string) =>
+    apiFetch<PublicMenuCategoryResponse[]>(API_ENDPOINTS.publicMenuBySlug(slug), {
+      auth: "none",
+    }),
+
+  getPublicTableContext: (slug: string, tableId: string) =>
+    apiFetch<PublicDiningContextResponse>(API_ENDPOINTS.publicTableContext(slug, tableId), {
+      auth: "none",
+    }),
+
+  getPublicRoomContext: (slug: string, roomId: string) =>
+    apiFetch<PublicDiningContextResponse>(API_ENDPOINTS.publicRoomContext(slug, roomId), {
+      auth: "none",
+    }),
+
+  createPublicOrder: (payload: {
+    slug: string;
+    tableId?: string | null;
+    roomId?: string | null;
+    items: PublicCreateOrderItemRequest[];
+  }) =>
+    apiFetch<PublicCreateOrderResponse>(API_ENDPOINTS.publicOrders(), {
+      method: "POST",
+      auth: "none",
+      body: JSON.stringify(payload),
+    }),
+
+  payPublicOrder: (
+    orderId: string,
+    payload: {
+      slug: string;
+      tableId?: string | null;
+      roomId?: string | null;
+      gateway: PaymentGateway;
+      simulateSuccess?: boolean;
+      transactionId?: string | null;
+    }
+  ) =>
+    apiFetch<PublicOrderPaymentResponse>(`${API_ENDPOINTS.publicOrderById(orderId)}/pay`, {
+      method: "POST",
+      auth: "none",
+      body: JSON.stringify(payload),
+    }),
+
+  getPublicOrder: (orderId: string, params: { slug: string; tableId?: string | null; roomId?: string | null }) => {
+    const q = new URLSearchParams({ slug: params.slug });
+    if (params.tableId) q.set("tableId", params.tableId);
+    if (params.roomId) q.set("roomId", params.roomId);
+    return apiFetch<PublicOrderTrackerResponse>(`${API_ENDPOINTS.publicOrderById(orderId)}?${q.toString()}`, {
+      auth: "none",
+    });
+  },
+
+  getAdminOrders: () =>
+    apiFetch<AdminOrderResponse[]>(API_ENDPOINTS.adminOrders(), {
+      auth: "restaurant",
+    }),
+
+  updateAdminOrderStatus: (orderId: string, status: OrderStatus) =>
+    apiFetch<AdminOrderResponse>(API_ENDPOINTS.adminOrderStatus(orderId), {
+      method: "PATCH",
+      auth: "restaurant",
+      body: JSON.stringify({ status }),
+    }),
+
+  markAdminOrderPaid: (orderId: string, gateway: "CASH" | "UPI") =>
+    apiFetch<AdminOrderResponse>(API_ENDPOINTS.adminOrderMarkPaid(orderId), {
+      method: "POST",
+      auth: "restaurant",
+      body: JSON.stringify({ gateway }),
+    }),
 };

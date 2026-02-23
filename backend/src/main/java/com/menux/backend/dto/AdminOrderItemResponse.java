@@ -10,6 +10,7 @@ public record AdminOrderItemResponse(
         UUID variantId,
         String variantName,
         Integer quantity,
-        BigDecimal price
+        BigDecimal price,
+        String instruction
 ) {
 }

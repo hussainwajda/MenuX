@@ -16,7 +16,8 @@ public record PublicCreateOrderRequest(
     public record PublicCreateOrderItemRequest(
             UUID menuItemId,
             UUID variantId,
-            Integer quantity
+            Integer quantity,
+            String instruction
     ) {
     }
 }

@@ -2,14 +2,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MOCK_ORDERS, MOCK_MENU_ITEMS } from "@/data/mockData";
+import Link from "next/link";
+import { MOCK_MENU_ITEMS } from "@/data/mockData";
 import ProductCard from "@/components/dashboard/ProductList";
 import OrderQueueCard from "@/components/dashboard/OrderQueue";
 import KOTModal from "@/components/dashboard/KOTModal";
 import { Search, Bell, LogOut, Store, Sparkles, ShieldCheck } from "lucide-react";
 import { Order, KOT, OrderStatus } from "@/types";
 import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
-import { apiClient, clearRestaurantAuth, setRestaurantAuth } from "@/lib/api-client";
+import { apiClient, clearRestaurantAuth, setRestaurantAuth, type AdminOrderResponse } from "@/lib/api-client";
 
 function RestaurantAuth() {
   const [email, setEmail] = useState("");
@@ -134,9 +135,9 @@ function RestaurantAuth() {
 
           <div className="mt-6 flex items-center justify-between text-xs text-white/50">
             <span>Need a super admin?</span>
-            <a href="/admin" className="text-white hover:text-[#ffb703] transition">
+            <Link href="/admin" className="text-white hover:text-[#ffb703] transition">
               Go to admin login
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -145,8 +146,11 @@ function RestaurantAuth() {
 }
 
 function RestaurantDashboard() {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [adminOrders, setAdminOrders] = useState<AdminOrderResponse[]>([]);
   const [selectedKOT, setSelectedKOT] = useState<KOT | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState<string>("");
   const logout = useRestaurantSessionStore((s) => s.logout);
   const expiresAt = useRestaurantSessionStore((s) => s.expiresAt);
 
@@ -158,38 +162,53 @@ function RestaurantDashboard() {
   }, [expiresAt, logout]);
 
   useEffect(() => {
-    const checkOrders = () => {
-      const simulatedData = localStorage.getItem("simulated_orders");
-      if (simulatedData) {
-        const newOrders = JSON.parse(simulatedData);
+    let cancelled = false;
 
-        setOrders((prevOrders) => {
-          const combined = [...prevOrders, ...newOrders];
-          const unique = combined.filter(
-            (order, index, self) =>
-              index === self.findIndex((t) => t.id === order.id)
-          );
-          return unique;
-        });
+    const toUiOrder = (order: AdminOrderResponse): Order => ({
+      id: order.id,
+      customer_name: "Guest",
+      table_number: order.tableNumber || order.roomNumber || "N/A",
+      items_count: order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0,
+      total_amount: Number(order.totalAmount || 0),
+      status: order.status as OrderStatus,
+      created_at: new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
+
+    const fetchOrders = async (initial = false) => {
+      try {
+        if (initial) {
+          setOrdersLoading(true);
+          setOrdersError("");
+        }
+        const data = await apiClient.getAdminOrders();
+        if (cancelled) return;
+        setAdminOrders(data);
+        setOrders(data.map(toUiOrder));
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Failed to load orders";
+        setOrdersError(message);
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
       }
     };
 
-    checkOrders();
-    window.addEventListener("storage", checkOrders);
-    const interval = setInterval(checkOrders, 2000);
-
+    void fetchOrders(true);
+    const interval = setInterval(() => void fetchOrders(false), 5000);
     return () => {
-      window.removeEventListener("storage", checkOrders);
+      cancelled = true;
       clearInterval(interval);
     };
   }, []);
 
   const handleViewKOT = (order: Order) => {
-    const orderItems = (order as any).items || [
-      { name: "Fiery Jalapeno Pizza", variant: "Medium", quantity: 1, note: "Extra spicy" },
-      { name: "Chicken Dominator", variant: "Large", quantity: 1 },
-      { name: "Coke", quantity: order.items_count - 2 },
-    ];
+    const source = adminOrders.find((o) => o.id === order.id);
+    const orderItems =
+      source?.items?.map((i) => ({
+        name: i.menuItemName,
+        variant: i.variantName || undefined,
+        quantity: i.quantity,
+      })) || [];
 
     const kotData: KOT = {
       order_id: order.id,
@@ -209,36 +228,25 @@ function RestaurantDashboard() {
       "SERVED",
     ];
 
-    setOrders((currentOrders) => {
-      const updatedOrders = currentOrders.map((order) => {
-        if (order.id === orderId) {
-          const currentIndex = statusSequence.indexOf(order.status);
-          const nextStatus =
-            currentIndex < statusSequence.length - 1
-              ? statusSequence[currentIndex + 1]
-              : order.status;
+    const current = adminOrders.find((o) => o.id === orderId);
+    if (!current) return;
+    const currentIndex = statusSequence.indexOf(current.status as OrderStatus);
+    const nextStatus =
+      currentIndex < statusSequence.length - 1 ? statusSequence[currentIndex + 1] : current.status;
+    if (nextStatus === current.status) return;
 
-          return { ...order, status: nextStatus };
-        }
-        return order;
-      });
-
-      const simulatedData = localStorage.getItem("simulated_orders");
-      if (simulatedData) {
-        let storedOrders = JSON.parse(simulatedData);
-        const orderIndex = storedOrders.findIndex((o: Order) => o.id === orderId);
-
-        if (orderIndex !== -1) {
-          const updatedOrder = updatedOrders.find((o) => o.id === orderId);
-          if (updatedOrder) {
-            storedOrders[orderIndex].status = updatedOrder.status;
-            localStorage.setItem("simulated_orders", JSON.stringify(storedOrders));
-          }
-        }
+    void (async () => {
+      try {
+        const updated = await apiClient.updateAdminOrderStatus(orderId, nextStatus);
+        setAdminOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status: updated.status as OrderStatus } : o))
+        );
+      } catch (err) {
+        console.error("Failed to update order status", err);
+        setOrdersError(err instanceof Error ? err.message : "Failed to update order status");
       }
-
-      return updatedOrders;
-    });
+    })();
   };
 
   return (
@@ -274,6 +282,18 @@ function RestaurantDashboard() {
           </button>
         </div>
       </header>
+
+      {ordersError && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {ordersError}
+        </div>
+      )}
+
+      {ordersLoading && (
+        <div className="mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+          Loading live orders...
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {orders.map((order) => (

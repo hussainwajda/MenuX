@@ -1,6 +1,7 @@
 package com.menux.backend.service;
 
 import com.menux.backend.dto.RoomCreateRequest;
+import com.menux.backend.dto.PublicDiningContextResponse;
 import com.menux.backend.dto.RoomResponse;
 import com.menux.backend.dto.RoomUpdateRequest;
 import com.menux.backend.entity.Restaurant;
@@ -62,6 +63,28 @@ public class RoomService {
         Restaurant restaurant = getRestaurant(restaurantId);
         requireUltra(restaurant);
         return toResponse(getRoom(restaurantId, roomId));
+    }
+
+    @Transactional(readOnly = true)
+    public PublicDiningContextResponse getPublicContextBySlug(String slug, UUID roomId) {
+        Restaurant restaurant = restaurantRepository.findBySlugIgnoreCase(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        if (!restaurant.isActive()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found");
+        }
+        requireUltra(restaurant);
+        Room room = getRoom(restaurant.getId(), roomId);
+        return new PublicDiningContextResponse(
+                restaurant.getId(),
+                restaurant.getName(),
+                restaurant.getSlug(),
+                restaurant.getLogoUrl(),
+                restaurant.getSubscription() != null ? restaurant.getSubscription().getName() : null,
+                "room",
+                room.getId(),
+                room.getRoomNumber(),
+                room.isActive()
+        );
     }
 
     @Transactional
