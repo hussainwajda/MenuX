@@ -28,7 +28,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/restaurants")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
 public class RestaurantController {
 
     private final RestaurantService service;

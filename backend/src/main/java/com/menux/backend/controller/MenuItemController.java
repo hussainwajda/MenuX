@@ -24,7 +24,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/restaurants/{restaurantId}/menu-items")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
 public class MenuItemController {
 
     private final MenuItemService menuItemService;

@@ -34,6 +34,8 @@ supabase:
 
 app:
   qr-base-url: ${QR_BASE_URL:https://menux-new.vercel.app}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://menux-new.vercel.app}
 
 springdoc:
   api-docs:

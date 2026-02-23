@@ -4,7 +4,6 @@ import com.menux.backend.dto.PublicDiningContextResponse;
 import com.menux.backend.service.RoomService;
 import com.menux.backend.service.TableService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/restaurants/slug/{slug}")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
 public class DiningPublicController {
 
     private final TableService tableService;
