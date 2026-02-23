@@ -143,8 +143,11 @@ export function MenuItemsTab() {
     setUploadingImage(true);
     try {
       const response = await apiClient.uploadMenuItemImage(restaurantId, file);
-      setFormData({ ...formData, imageUrl: response.image_url });
-      toast.success('Image uploaded successfully');
+      // Added safety check to ensure response exists before updating state
+      if (response && response.image_url) {
+        setFormData({ ...formData, imageUrl: response.image_url });
+        toast.success('Image uploaded successfully');
+      }
     } catch (error) {
       toast.error('Failed to upload image');
     } finally {
@@ -429,8 +432,10 @@ export function MenuItemsTab() {
                 <Upload className="w-5 h-5 text-gray-400" />
               </div>
               {formData.imageUrl && (
-                <p className="text-sm text-gray-500 mt-1">Selected: {formData.imageUrl}</p>
-              )}
+  <p className="text-sm text-gray-500 mt-1 break-all">
+    Selected: {formData.imageUrl}
+  </p>
+)}
               {uploadingImage && (
                 <p className="text-sm text-gray-500 mt-1">Uploading image...</p>
               )}
