@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.cors.allowed-origins:https://menux-new.vercel.app}")
+    @Value("${app.cors.allowed-origins:http://localhost:3000,https://menux-new.vercel.app}")
     private String allowedOrigins;
 
     @Bean
