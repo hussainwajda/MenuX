@@ -1,8 +1,10 @@
 package com.menux.backend.controller;
 
 import com.menux.backend.dto.RestaurantCreateRequest;
+import com.menux.backend.dto.RestaurantForgotPasswordRequest;
 import com.menux.backend.dto.RestaurantLoginRequest;
 import com.menux.backend.dto.RestaurantLoginResponse;
+import com.menux.backend.dto.RestaurantResetPasswordRequest;
 import com.menux.backend.dto.RestaurantResponse;
 import com.menux.backend.dto.RestaurantUpdateRequest;
 import com.menux.backend.service.AdminAuthService;
@@ -13,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -84,8 +87,29 @@ public class RestaurantController {
     }
 
     @PostMapping("/auth/login")
-    public RestaurantLoginResponse login(@Valid @RequestBody RestaurantLoginRequest request) {
-        return service.login(request);
+    public ResponseEntity<?> login(@Valid @RequestBody RestaurantLoginRequest request) {
+        try {
+            return ResponseEntity.ok(service.login(request));
+        } catch (ResponseStatusException ex) {
+            String message = ex.getReason() != null && !ex.getReason().isBlank()
+                    ? ex.getReason()
+                    : "Login failed";
+            return ResponseEntity.status(ex.getStatusCode())
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(message);
+        }
+    }
+
+    @PostMapping("/auth/forgot-password")
+    public Map<String, String> forgotPassword(@Valid @RequestBody RestaurantForgotPasswordRequest request) {
+        service.forgotPassword(request);
+        return Map.of("message", "If the account exists, a password reset email has been sent.");
+    }
+
+    @PostMapping("/auth/reset-password")
+    public Map<String, String> resetPassword(@Valid @RequestBody RestaurantResetPasswordRequest request) {
+        service.resetPassword(request);
+        return Map.of("message", "Password updated successfully. Please log in with your new password.");
     }
 
     @PatchMapping("/{id}")

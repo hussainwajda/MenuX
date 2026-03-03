@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { MOCK_MENU_ITEMS } from "@/data/mockData";
 import ProductCard from "@/components/dashboard/ProductList";
 import OrderQueueCard from "@/components/dashboard/OrderQueue";
@@ -11,11 +10,17 @@ import { Search, Bell, LogOut, Store, Sparkles, ShieldCheck } from "lucide-react
 import { Order, KOT, OrderStatus } from "@/types";
 import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
 import { apiClient, clearRestaurantAuth, setRestaurantAuth, type AdminOrderResponse } from "@/lib/api-client";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 function RestaurantAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const setSession = useRestaurantSessionStore((s) => s.setSession);
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +35,33 @@ function RestaurantAuth() {
       const expiresAt = Date.now() + expiresIn * 1000;
 
       setRestaurantAuth(response.accessToken, expiresAt);
+      let rbacToken: string | null = null;
+      let permissions: string[] | null = null;
+      let rbacRole: string | null = null;
+
+      try {
+        const rbacResponse = await fetch(API_ENDPOINTS.ownerRbacSession(), {
+          method: "POST",
+          body: JSON.stringify({}),
+          // Use restaurant owner session token to create RBAC session.
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${response.accessToken}`,
+          },
+        });
+        const rbacBody = (await rbacResponse.json().catch(() => null)) as
+          | { data?: { token?: string; permissions?: string[]; roleName?: string } }
+          | null;
+        const token = rbacBody?.data?.token;
+        if (typeof token === "string" && token) {
+          rbacToken = token;
+          permissions = Array.isArray(rbacBody?.data?.permissions) ? rbacBody?.data?.permissions : [];
+          rbacRole = rbacBody?.data?.roleName ?? null;
+        }
+      } catch {
+        // RBAC bootstrap is optional for owner dashboard login.
+      }
+
       setSession({
         restaurant: {
           id: response.restaurant?.id,
@@ -40,8 +72,11 @@ function RestaurantAuth() {
           isActive: response.restaurant?.isActive,
         },
         accessToken: response.accessToken,
+        rbacToken,
         refreshToken: response.refreshToken ?? null,
-        userRole: response.userRole,
+        userRole: rbacRole ?? response.userRole,
+        permissions,
+        authType: "owner",
         expiresIn,
       });
     } catch (err) {
@@ -49,6 +84,33 @@ function RestaurantAuth() {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotError("");
+    setForgotMessage("");
+    setForgotLoading(true);
+    try {
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/reset-password`
+          : undefined;
+      const response = await apiClient.restaurantForgotPassword(
+        forgotEmail.trim(),
+        redirectTo
+      );
+      setForgotMessage(
+        response.message || "If the account exists, a reset email has been sent."
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Unable to process forgot password request";
+      setForgotError(message);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -119,6 +181,57 @@ function RestaurantAuth() {
                 required
               />
             </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword((prev) => !prev);
+                  setForgotEmail((prev) => prev || email);
+                  setForgotError("");
+                  setForgotMessage("");
+                }}
+                className="text-xs text-white/70 hover:text-white underline underline-offset-4"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {showForgotPassword && (
+              <div className="rounded-xl border border-white/15 bg-black/20 p-4 space-y-3">
+                <p className="text-xs text-white/70">
+                  We will send a password reset link to your registered email.
+                </p>
+                <div className="space-y-3">
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="owner@restaurant.com"
+                    className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ffb703]/40"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleForgotPassword()}
+                    disabled={forgotLoading}
+                    className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 text-sm font-semibold hover:bg-white/20 transition disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {forgotLoading ? "Sending..." : "Send Reset Link"}
+                  </button>
+                </div>
+                {forgotMessage && (
+                  <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-100">
+                    {forgotMessage}
+                  </div>
+                )}
+                {forgotError && (
+                  <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-100">
+                    {forgotError}
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
@@ -133,12 +246,6 @@ function RestaurantAuth() {
             )}
           </form>
 
-          <div className="mt-6 flex items-center justify-between text-xs text-white/50">
-            <span>Need a super admin?</span>
-            <Link href="/admin" className="text-white hover:text-[#ffb703] transition">
-              Go to admin login
-            </Link>
-          </div>
         </div>
       </div>
     </div>

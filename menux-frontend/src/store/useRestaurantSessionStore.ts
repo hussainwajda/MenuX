@@ -11,8 +11,11 @@ interface RestaurantSession {
     isActive?: boolean;
   } | null;
   accessToken: string | null;
+  rbacToken: string | null;
   refreshToken: string | null;
   userRole: string | null;
+  permissions: string[] | null;
+  authType: "owner" | "captain" | null;
   expiresAt: number | null;
   isLoggedIn: boolean;
 
@@ -26,9 +29,18 @@ interface RestaurantSession {
       isActive?: boolean;
     };
     accessToken: string;
+    rbacToken?: string | null;
     refreshToken?: string | null;
     userRole?: string | null;
+    permissions?: string[] | null;
+    authType?: "owner" | "captain";
     expiresIn?: number | null;
+  }) => void;
+  setRbacSession: (payload: {
+    rbacToken: string;
+    permissions?: string[] | null;
+    userRole?: string | null;
+    authType?: "owner" | "captain";
   }) => void;
   logout: () => void;
 }
@@ -38,11 +50,14 @@ export const useRestaurantSessionStore = create<RestaurantSession>()(
     (set) => ({
       restaurant: null,
       accessToken: null,
+      rbacToken: null,
       refreshToken: null,
       userRole: null,
+      permissions: null,
+      authType: null,
       expiresAt: null,
       isLoggedIn: false,
-      setSession: ({ restaurant, accessToken, refreshToken, userRole, expiresIn }) => {
+      setSession: ({ restaurant, accessToken, rbacToken, refreshToken, userRole, permissions, authType, expiresIn }) => {
         const expiresAt =
           typeof expiresIn === "number" && expiresIn > 0
             ? Date.now() + expiresIn * 1000
@@ -50,18 +65,32 @@ export const useRestaurantSessionStore = create<RestaurantSession>()(
         set({
           restaurant,
           accessToken,
+          rbacToken: rbacToken ?? null,
           refreshToken: refreshToken ?? null,
           userRole: userRole ?? null,
+          permissions: permissions ?? null,
+          authType: authType ?? "owner",
           expiresAt,
           isLoggedIn: true,
         });
       },
+      setRbacSession: ({ rbacToken, permissions, userRole, authType }) =>
+        set((state) => ({
+          ...state,
+          rbacToken,
+          permissions: permissions ?? state.permissions,
+          userRole: userRole ?? state.userRole,
+          authType: authType ?? state.authType ?? "owner",
+        })),
       logout: () =>
         set({
           restaurant: null,
           accessToken: null,
+          rbacToken: null,
           refreshToken: null,
           userRole: null,
+          permissions: null,
+          authType: null,
           expiresAt: null,
           isLoggedIn: false,
         }),
@@ -72,8 +101,11 @@ export const useRestaurantSessionStore = create<RestaurantSession>()(
       partialize: (state) => ({
         restaurant: state.restaurant,
         accessToken: state.accessToken,
+        rbacToken: state.rbacToken,
         refreshToken: state.refreshToken,
         userRole: state.userRole,
+        permissions: state.permissions,
+        authType: state.authType,
         expiresAt: state.expiresAt,
         isLoggedIn: state.isLoggedIn,
       }),

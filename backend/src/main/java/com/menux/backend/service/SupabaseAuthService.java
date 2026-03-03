@@ -93,6 +93,44 @@ public class SupabaseAuthService {
         return new SupabaseToken(accessToken, refreshToken, expiresIn, userId);
     }
 
+    public void sendPasswordResetEmail(String email, String redirectTo) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("email", email);
+
+        supabaseWebClient.post()
+                .uri(uriBuilder -> {
+                    var builder = uriBuilder.path("/auth/v1/recover");
+                    if (redirectTo != null && !redirectTo.isBlank()) {
+                        builder.queryParam("redirect_to", redirectTo);
+                    }
+                    return builder.build();
+                })
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("apikey", properties.anonKey())
+                .header("Authorization", "Bearer " + properties.anonKey())
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorMap(WebClientResponseException.class, this::mapAuthError)
+                .block();
+    }
+
+    public void updatePassword(String accessToken, String newPassword) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("password", newPassword);
+
+        supabaseWebClient.put()
+                .uri("/auth/v1/user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("apikey", properties.anonKey())
+                .header("Authorization", "Bearer " + accessToken)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorMap(WebClientResponseException.class, this::mapAuthError)
+                .block();
+    }
+
     public UUID getUserIdFromAccessToken(String accessToken) {
         JsonNode response = supabaseWebClient.get()
                 .uri("/auth/v1/user")
@@ -113,6 +151,10 @@ public class SupabaseAuthService {
         String body = ex.getResponseBodyAsString();
         String lowerBody = body != null ? body.toLowerCase() : "";
         boolean invalidCreds = lowerBody.contains("invalid login credentials");
+        boolean invalidToken = lowerBody.contains("jwt expired")
+                || lowerBody.contains("token has expired")
+                || lowerBody.contains("invalid token")
+                || lowerBody.contains("invalid jwt");
 
         log.warn(
                 "Supabase auth error: status={} body={}",
@@ -122,6 +164,9 @@ public class SupabaseAuthService {
 
         if (invalidCreds) {
             return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+        }
+        if (invalidToken) {
+            return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Reset link is invalid or expired");
         }
 
         String message = "Supabase auth error";

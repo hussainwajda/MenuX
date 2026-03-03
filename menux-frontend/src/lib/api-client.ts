@@ -56,6 +56,14 @@ export interface RestaurantLoginResponse {
   restaurant: RestaurantResponse;
 }
 
+export interface RestaurantForgotPasswordResponse {
+  message: string;
+}
+
+export interface RestaurantResetPasswordResponse {
+  message: string;
+}
+
 export interface RestaurantCreateRequest {
   name: string;
   slug: string;
@@ -471,6 +479,20 @@ export const apiClient = {
       method: "POST",
       auth: "none",
       body: JSON.stringify({ email, password }),
+    }),
+
+  restaurantForgotPassword: (email: string, redirectTo?: string) =>
+    apiFetch<RestaurantForgotPasswordResponse>(API_ENDPOINTS.restaurantForgotPassword(), {
+      method: "POST",
+      auth: "none",
+      body: JSON.stringify({ email, redirectTo }),
+    }),
+
+  restaurantResetPassword: (accessToken: string, newPassword: string) =>
+    apiFetch<RestaurantResetPasswordResponse>(API_ENDPOINTS.restaurantResetPassword(), {
+      method: "POST",
+      auth: "none",
+      body: JSON.stringify({ accessToken, newPassword }),
     }),
 
   // Menu Categories
