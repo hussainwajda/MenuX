@@ -4,12 +4,18 @@ export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE_URL;
 
 export const API_ENDPOINTS = {
+  ownerLogin: () => `${API_BASE_URL}/auth/login`,
+  ownerRbacSession: () => `${API_BASE_URL}/auth/restaurant/session`,
+  captainLogin: () => `${API_BASE_URL}/captain/login`,
+
   adminLogin: () => `${API_BASE_URL}/api/admin/login`,
 
   restaurants: () => `${API_BASE_URL}/api/restaurants`,
   restaurantById: (id: string) => `${API_BASE_URL}/api/restaurants/${id}`,
   restaurantUploadLogo: () => `${API_BASE_URL}/api/restaurants/upload/logo`,
   restaurantAuthLogin: () => `${API_BASE_URL}/api/restaurants/auth/login`,
+  restaurantForgotPassword: () => `${API_BASE_URL}/api/restaurants/auth/forgot-password`,
+  restaurantResetPassword: () => `${API_BASE_URL}/api/restaurants/auth/reset-password`,
 
   subscriptions: () => `${API_BASE_URL}/api/subscriptions`,
   subscriptionDropdown: () => `${API_BASE_URL}/api/subscription-dropdown`,
@@ -36,4 +42,8 @@ export const API_ENDPOINTS = {
   adminOrderById: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}`,
   adminOrderStatus: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}/status`,
   adminOrderMarkPaid: (orderId: string) => `${API_BASE_URL}/api/admin/orders/${orderId}/mark-paid`,
+
+  roles: () => `${API_BASE_URL}/roles`,
+  users: () => `${API_BASE_URL}/users`,
+  permissionModules: () => `${API_BASE_URL}/permissions/modules`,
 };

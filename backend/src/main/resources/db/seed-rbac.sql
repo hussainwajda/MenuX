@@ -1,0 +1,34 @@
+-- Sample seed data for RBAC module
+-- Password used below: Admin@123
+-- BCrypt hash generated once for demo purpose.
+
+INSERT INTO rbac_hotels (id, name, created_at)
+VALUES ('11111111-1111-1111-1111-111111111111', 'Demo Hotel', now())
+ON CONFLICT DO NOTHING;
+
+INSERT INTO rbac_roles (id, name, description, restaurant_id, created_at)
+VALUES
+    ('22222222-2222-2222-2222-222222222222', 'Owner', 'Main owner with full access', '11111111-1111-1111-1111-111111111111', now()),
+    ('33333333-3333-3333-3333-333333333333', 'Captain', 'Captain operations role', '11111111-1111-1111-1111-111111111111', now())
+ON CONFLICT DO NOTHING;
+
+INSERT INTO rbac_permissions (id, role_id, permission_key, created_at)
+VALUES
+    ('44444444-4444-4444-4444-000000000001', '22222222-2222-2222-2222-222222222222', 'orders.view', now()),
+    ('44444444-4444-4444-4444-000000000002', '22222222-2222-2222-2222-222222222222', 'orders.create', now()),
+    ('44444444-4444-4444-4444-000000000003', '22222222-2222-2222-2222-222222222222', 'orders.update', now()),
+    ('44444444-4444-4444-4444-000000000004', '22222222-2222-2222-2222-222222222222', 'orders.delete', now()),
+    ('44444444-4444-4444-4444-000000000005', '22222222-2222-2222-2222-222222222222', 'tables.view', now()),
+    ('44444444-4444-4444-4444-000000000006', '22222222-2222-2222-2222-222222222222', 'menu.edit', now()),
+    ('44444444-4444-4444-4444-000000000007', '22222222-2222-2222-2222-222222222222', 'reports.view', now()),
+    ('44444444-4444-4444-4444-000000000008', '22222222-2222-2222-2222-222222222222', 'users.manage', now()),
+    ('44444444-4444-4444-4444-000000000009', '33333333-3333-3333-3333-333333333333', 'orders.view', now()),
+    ('44444444-4444-4444-4444-000000000010', '33333333-3333-3333-3333-333333333333', 'orders.create', now()),
+    ('44444444-4444-4444-4444-000000000011', '33333333-3333-3333-3333-333333333333', 'tables.view', now())
+ON CONFLICT DO NOTHING;
+
+INSERT INTO rbac_users (id, name, email, password, role_id, restaurant_id, is_active, deleted, created_at)
+VALUES
+    ('55555555-5555-5555-5555-555555555555', 'Demo Owner', 'owner@demo.com', '$2a$10$7QJ9A0mleqrs9jwELyhl725JoPLD114F8CbnMD4HzyBbs6k8ZZrPm', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', true, false, now()),
+    ('66666666-6666-6666-6666-666666666666', 'Demo Captain', 'captain@demo.com', '$2a$10$7QJ9A0mleqrs9jwELyhl725JoPLD114F8CbnMD4HzyBbs6k8ZZrPm', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', true, false, now())
+ON CONFLICT DO NOTHING;

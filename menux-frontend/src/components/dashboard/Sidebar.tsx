@@ -2,7 +2,7 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -13,26 +13,49 @@ import {
   LogOut,
   Armchair,
   Hotel,
+  Users,
 } from "lucide-react";
 import { useRestaurantSessionStore } from "@/store/useRestaurantSessionStore";
+import { clearRestaurantAuth } from "@/lib/api-client";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const subscriptionPlan = useRestaurantSessionStore((s) => s.restaurant?.subscriptionPlan);
+  const restaurantSlug = useRestaurantSessionStore((s) => s.restaurant?.slug);
+  const permissions = useRestaurantSessionStore((s) => s.permissions);
+  const authType = useRestaurantSessionStore((s) => s.authType);
+  const logout = useRestaurantSessionStore((s) => s.logout);
   const isUltraPlan = (subscriptionPlan || "").toUpperCase() === "ULTRA";
   const showRoomsOption = isUltraPlan || !subscriptionPlan;
 
   const menuItems = [
-    { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard" },
-    { name: "Dish Inventory", icon: <UtensilsCrossed size={20} />, path: "/dashboard/menu" },
-    { name: "Restaurant Tables", icon: <Armchair size={20} />, path: "/dashboard/tables" },
+    { name: "Dashboard", icon: <LayoutDashboard size={20} />, path: "/dashboard", permission: null },
+    { name: "Dish Inventory", icon: <UtensilsCrossed size={20} />, path: "/dashboard/menu", permission: "menu.edit" },
+    { name: "Restaurant Tables", icon: <Armchair size={20} />, path: "/dashboard/tables", permission: "tables.view" },
     ...(showRoomsOption
-      ? [{ name: "Hotel Rooms", icon: <Hotel size={20} />, path: "/dashboard/rooms" }]
+      ? [{ name: "Hotel Rooms", icon: <Hotel size={20} />, path: "/dashboard/rooms", permission: "tables.view" }]
       : []),
-    { name: "Orders", icon: <ClipboardList size={20} />, path: "/dashboard/orders" },
-    { name: "Notifications", icon: <Bell size={20} />, path: "/dashboard/notifications" },
-    { name: "Support", icon: <Headphones size={20} />, path: "/dashboard/support" },
+    { name: "Orders", icon: <ClipboardList size={20} />, path: "/dashboard/orders", permission: "orders.view" },
+    { name: "Employees", icon: <Users size={20} />, path: "/dashboard/users", permission: "users.manage" },
+    { name: "Notifications", icon: <Bell size={20} />, path: "/dashboard/notifications", permission: null },
+    { name: "Support", icon: <Headphones size={20} />, path: "/dashboard/support", permission: null },
   ];
+
+  const visibleMenuItems =
+    authType !== "captain" || !permissions?.length
+      ? menuItems
+      : menuItems.filter((item) => !item.permission || permissions.includes(item.permission));
+
+  const handleLogout = () => {
+    clearRestaurantAuth();
+    logout();
+    if (authType === "captain" && restaurantSlug) {
+      router.replace(`/${restaurantSlug}/captain/login`);
+      return;
+    }
+    router.replace("/dashboard");
+  };
 
   return (
     <aside className="w-20 flex flex-col items-center py-6 justify-between bg-[#1a1614] h-screen border-r border-gray-800">
@@ -55,7 +78,7 @@ export default function Sidebar() {
         
         {/* Navigation Items */}
         <nav className="flex flex-col gap-3 w-full px-3">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link 
@@ -88,7 +111,13 @@ export default function Sidebar() {
         >
           <Settings size={20} />
         </Link>        
-        <button className="p-3 text-gray-500 hover:bg-gray-800 rounded-xl flex justify-center"><LogOut size={20} /></button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="p-3 text-gray-500 hover:bg-gray-800 rounded-xl flex justify-center"
+        >
+          <LogOut size={20} />
+        </button>
       </div>
     </aside>
   );

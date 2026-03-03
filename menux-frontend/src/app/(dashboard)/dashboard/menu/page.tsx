@@ -42,7 +42,7 @@ export default function MenuManagementPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Menu Management</h1>
-          <p className="text-gray-500 mt-1">Manage your restaurant's menu categories, items, and variants</p>
+          <p className="text-gray-500 mt-1">Manage your restaurant&apos;s menu categories, items, and variants</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">

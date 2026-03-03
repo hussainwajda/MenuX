@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.menux.backend.dto.RestaurantCreateRequest;
+import com.menux.backend.dto.RestaurantForgotPasswordRequest;
 import com.menux.backend.dto.RestaurantLoginRequest;
 import com.menux.backend.dto.RestaurantLoginResponse;
+import com.menux.backend.dto.RestaurantResetPasswordRequest;
 import com.menux.backend.dto.RestaurantResponse;
 import com.menux.backend.dto.RestaurantUpdateRequest;
 import com.menux.backend.dto.SubscriptionResponse;
@@ -209,6 +211,16 @@ public class RestaurantService {
                 user.getRole().name(),
                 restaurantResponse
         );
+    }
+
+    @Transactional(readOnly = true)
+    public void forgotPassword(RestaurantForgotPasswordRequest request) {
+        supabaseAuthService.sendPasswordResetEmail(request.email(), request.redirectTo());
+    }
+
+    @Transactional(readOnly = true)
+    public void resetPassword(RestaurantResetPasswordRequest request) {
+        supabaseAuthService.updatePassword(request.accessToken(), request.newPassword());
     }
 
     private String themeConfigToJson(Map<String, Object> themeConfig) {
